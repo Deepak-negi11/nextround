@@ -1,0 +1,245 @@
+// NextRound — campus placement portal (schema from the ER diagram)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+  INTERVIEWER
+}
+
+enum DriveStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  COMPLETED
+}
+
+enum RoundMode {
+  ONLINE
+  OFFLINE
+}
+
+enum RoundStatus {
+  SCHEDULED
+  ANNOUNCED
+  COMPLETED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  IN_PROGRESS
+  SELECTED
+  REJECTED
+  OFFERED
+  OFFER_ACCEPTED
+  OFFER_DECLINED
+}
+
+enum Outcome {
+  PENDING
+  SELECTED
+  REJECTED
+  NEXT_ROUND
+  ABSENT
+}
+
+enum OfferStatus {
+  ISSUED
+  ACCEPTED
+  DECLINED
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  role          Role           @default(STUDENT)
+  createdAt     DateTime       @default(now())
+  student       Student?
+  panelRounds   RoundPanelist[]
+  resultsGiven  RoundResult[]
+  notifications Notification[]
+}
+
+model Company {
+  id           Int     @id @default(autoincrement())
+  companyName  String  @unique
+  industry     String?
+  website      String?
+  contactName  String?
+  contactEmail String?
+  drives       Drive[]
+}
+
+model Drive {
+  id                  Int              @id @default(autoincrement())
+  companyId           Int
+  company             Company          @relation(fields: [companyId], references: [id])
+  jobRole             String
+  package             Decimal          @db.Decimal(10, 2)
+  description         String?
+  applicationDeadline DateTime
+  driveStatus         DriveStatus      @default(DRAFT)
+  createdAt           DateTime         @default(now())
+  eligibilityRule     EligibilityRule?
+  branches            DriveBranch[]
+  applications        Application[]
+  rounds              Round[]
+
+  @@index([driveStatus])
+}
+
+model EligibilityRule {
+  id              Int    @id @default(autoincrement())
+  driveId         Int    @unique
+  drive           Drive  @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  minimumCgpa     Float  @default(0)
+  maximumBacklogs Int    @default(0)
+}
+
+model DriveBranch {
+  driveId    Int
+  branchName String
+  drive      Drive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+
+  @@id([driveId, branchName])
+}
+
+model Student {
+  id             Int          @id @default(autoincrement())
+  userId         Int          @unique
+  user           User         @relation(fields: [userId], references: [id])
+  rollNo         String       @unique
+  branch         String
+  cgpa           Float
+  activeBacklogs Int          @default(0)
+  graduationYear Int
+  resumeLink     String?
+  applications   Application[]
+}
+
+model Application {
+  id                Int               @id @default(autoincrement())
+  studentId         Int
+  student           Student           @relation(fields: [studentId], references: [id])
+  driveId           Int
+  drive             Drive             @relation(fields: [driveId], references: [id])
+  appliedAt         DateTime          @default(now())
+  applicationStatus ApplicationStatus @default(APPLIED)
+  results           RoundResult[]
+  offers            Offer[]
+  slots             InterviewSlot[]
+
+  @@unique([studentId, driveId]) // no duplicate applications
+  @@index([driveId, applicationStatus])
+}
+
+model Round {
+  id            Int             @id @default(autoincrement())
+  driveId       Int
+  drive         Drive           @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  roundNumber   Int
+  roundType     String // Aptitude Test, Online Coding Test, Group Discussion, Technical Interview, HR Interview, or custom
+  mode          RoundMode       @default(ONLINE)
+  startAt       DateTime?
+  endAt         DateTime?
+  resultDate    DateTime?
+  meetingLink   String? // online: assessment/meeting link
+  instructions  String? // online: instructions
+  venue         String? // offline fields
+  building      String?
+  roomNumber    String?
+  reportingTime String?
+  roundStatus   RoundStatus     @default(SCHEDULED)
+  slots         InterviewSlot[]
+  results       RoundResult[]
+  panelists     RoundPanelist[]
+
+  @@unique([driveId, roundNumber])
+}
+
+model RoundPanelist {
+  id            Int    @id @default(autoincrement())
+  roundId       Int
+  round         Round  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  interviewerId Int
+  interviewer   User   @relation(fields: [interviewerId], references: [id])
+
+  @@unique([roundId, interviewerId])
+}
+
+model InterviewSlot {
+  id                    Int         @id @default(autoincrement())
+  roundId               Int
+  round                 Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  startAt               DateTime
+  endAt                 DateTime
+  venue                 String?
+  meetingLink           String?
+  bookedByApplicationId Int?
+  bookedByApplication   Application? @relation(fields: [bookedByApplicationId], references: [id])
+
+  @@unique([roundId, bookedByApplicationId]) // an application books at most one slot per round
+}
+
+model RoundResult {
+  id           Int         @id @default(autoincrement())
+  applicationId Int
+  application  Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  roundId      Int
+  round        Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  outcome      Outcome     @default(PENDING)
+  score        Float?
+  rank         Int?
+  remarks      String?
+  recordedById Int?
+  recordedBy   User?       @relation(fields: [recordedById], references: [id])
+  createdAt    DateTime    @default(now())
+
+  @@unique([applicationId, roundId])
+}
+
+model Offer {
+  id           Int         @id @default(autoincrement())
+  applicationId Int        @unique
+  application  Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  offerStatus  OfferStatus @default(ISSUED)
+  package      Decimal     @db.Decimal(10, 2)
+  issuedAt     DateTime    @default(now())
+  respondedAt  DateTime?
+}
+
+// Senior success-story roadmaps (fixes the "students don't know how offers happen" loophole)
+model Roadmap {
+  id         Int      @id @default(autoincrement())
+  author     String
+  company    String
+  role       String
+  packageLpa Float
+  category   String // DSA, AI/ML, Web Dev, Web3 ...
+  summary    String
+  timeline   String
+  createdAt  DateTime @default(now())
+}
+
+// In-app updates so students don't miss drive openings, round announcements or results
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}

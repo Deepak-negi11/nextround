@@ -1,26 +1,35 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Black & white palette — brand tokens are grayscale so the whole site stays monochrome */
+  --color-brand-50: #F5F5F5;
+  --color-brand-100: #EBEBEB;
+  --color-brand-200: #D9D9D9;
+  --color-brand-300: #BFBFBF;
+  --color-brand-400: #8C8C8C;
+  --color-brand-500: #1F1F1F;
+  --color-brand-600: #0F0F0F;
+  --color-brand-700: #000000;
+  --color-brand-800: #000000;
+  --color-brand-900: #000000;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", Menlo, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* One slope angle for the whole site: both edges rise to the right by 3.5rem. */
+@utility slope-band {
+  clip-path: polygon(0 3.5rem, 100% 0, 100% calc(100% - 3.5rem), 0 100%);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+::selection {
+  background-color: var(--color-brand-100);
+  color: var(--color-brand-900);
 }
