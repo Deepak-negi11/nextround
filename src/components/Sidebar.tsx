@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/actions/auth";
 import type { SessionUser } from "@/lib/auth";
+import { Logo } from "./Logo";
 
 const NAV: Record<SessionUser["role"], { href: string; label: string }[]> = {
   STUDENT: [
@@ -31,12 +32,7 @@ const ROLE_LABEL: Record<SessionUser["role"], string> = {
 };
 
 function Brand() {
-  return (
-    <Link href="/" className="flex items-center gap-2">
-      <span className="inline-block h-2.5 w-2.5 rounded-sm bg-brand-500" aria-hidden />
-      <span className="font-display text-2xl font-semibold tracking-tight text-slate-900">NextRound</span>
-    </Link>
-  );
+  return <Logo />;
 }
 
 function NavLinks({ user, onNavigate }: { user: SessionUser; onNavigate?: () => void }) {

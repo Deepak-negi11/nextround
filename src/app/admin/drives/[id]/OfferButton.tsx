@@ -21,7 +21,7 @@ export default function OfferButton({
     <form action={formAction} className="inline">
       <input type="hidden" name="applicationId" value={applicationId} />
       <SubmitButton className="!px-3 !py-1.5 !text-xs">Issue offer</SubmitButton>
-      {state.error && <span className="ml-2 text-xs text-rose-600">{state.error}</span>}
+      {state.error && <span className="ml-2 text-xs text-slate-700">{state.error}</span>}
     </form>
   );
 }

@@ -24,7 +24,7 @@ export default function DriveForm({
           <div>
             <label className={labelCls} htmlFor="companyId">Company *</label>
             {companies.length === 0 ? (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
+              <div className="rounded-lg border border-slate-200 bg-slate-100 p-2.5 text-xs text-slate-700">
                 No companies added yet. <Link href="/admin/companies" className="font-semibold underline">Add a company</Link> first.
               </div>
             ) : (
@@ -70,7 +70,7 @@ export default function DriveForm({
           <label className={labelCls} htmlFor="description">Description</label>
           <textarea id="description" name="description" rows={2} className={inputCls} placeholder="Role details, internship→PPO policy, service bond…" />
         </div>
-        {state.error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{state.error}</p>}
+        {state.error && <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.error}</p>}
         <SubmitButton>Create drive (draft)</SubmitButton>
         <p className="text-xs text-slate-400">Drives start as drafts — add rounds, review eligibility, then publish.</p>
       </form>

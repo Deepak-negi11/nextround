@@ -50,7 +50,7 @@ export default async function DriveDetail({ params }: { params: Promise<{ id: st
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         {drive.description && <p className="text-sm leading-6 text-slate-600">{drive.description}</p>}
         {!eligible && !applied && (
-          <ul className="mt-4 space-y-1 rounded-lg bg-rose-50 p-3 text-xs text-rose-700">
+          <ul className="mt-4 space-y-1 rounded-lg bg-slate-100 p-3 text-xs text-slate-900">
             {reasons.map((r) => <li key={r}>• {r}</li>)}
           </ul>
         )}

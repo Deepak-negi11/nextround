@@ -49,8 +49,8 @@ export default function ProfileForm({
           <input id="resumeLink" name="resumeLink" type="url" placeholder="https://drive.google.com/…" defaultValue={initial.resumeLink} className={inputCls} />
         </div>
       </div>
-      {state.error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{state.error}</p>}
-      {state.ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.ok}</p>}
+      {state.error && <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.error}</p>}
+      {state.ok && <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.ok}</p>}
       <SubmitButton>Save profile</SubmitButton>
     </form>
   );

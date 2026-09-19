@@ -57,7 +57,7 @@ export default async function ReportsPage() {
                           <Badge tone="slate">In process</Badge>
                         )}
                       </td>
-                      <td className="py-2.5">{offer ? <span className="font-semibold text-emerald-600">₹{Number(offer.package)} LPA</span> : "—"}</td>
+                      <td className="py-2.5">{offer ? <span className="font-semibold text-slate-900">₹{Number(offer.package)} LPA</span> : "—"}</td>
                     </tr>
                   );
                 })}
@@ -69,7 +69,7 @@ export default async function ReportsPage() {
         <Card title="Summary">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
             <div><p className="text-xs uppercase text-slate-400">Students</p><p className="text-xl font-semibold">{students.length}</p></div>
-            <div><p className="text-xs uppercase text-slate-400">Placed</p><p className="text-xl font-semibold text-emerald-600">{placed.length}</p></div>
+            <div><p className="text-xs uppercase text-slate-400">Placed</p><p className="text-xl font-semibold text-slate-900">{placed.length}</p></div>
             <div><p className="text-xs uppercase text-slate-400">Offers issued</p><p className="text-xl font-semibold">{offers.length}</p></div>
             <div>
               <p className="text-xs uppercase text-slate-400">Highest CTC</p>

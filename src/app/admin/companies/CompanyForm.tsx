@@ -35,8 +35,8 @@ export default function CompanyForm({ action }: { action: (prev: ActionState, fd
           <SubmitButton className="w-full sm:w-auto">Add company</SubmitButton>
         </div>
       </div>
-      {state.error && <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{state.error}</p>}
-      {state.ok && <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.ok}</p>}
+      {state.error && <p className="mt-3 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.error}</p>}
+      {state.ok && <p className="mt-3 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.ok}</p>}
     </form>
   );
 }

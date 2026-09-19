@@ -57,7 +57,7 @@ export default async function DrivesPage() {
                   ) : (
                     <div className="text-right">
                       <Badge tone="red">Not eligible</Badge>
-                      <ul className="mt-1 space-y-0.5 text-right text-xs text-rose-600">
+                      <ul className="mt-1 space-y-0.5 text-right text-xs text-slate-700">
                         {reasons.map((r) => <li key={r}>{r}</li>)}
                       </ul>
                     </div>

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { login, type LoginState } from "@/actions/auth";
 import { SubmitButton } from "@/components/SubmitButton";
+import { Logo } from "@/components/Logo";
 import { inputCls, labelCls, overlineCls } from "@/components/ui";
 
 const DEMO = [
@@ -32,10 +33,7 @@ export default function LoginPage() {
           <div aria-hidden className="pointer-events-none absolute -right-10 top-0 h-[120%] w-24 rotate-12 bg-white/5" />
 
           <div className="relative">
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-2.5 w-2.5 rounded-sm bg-white" aria-hidden />
-              <p className="font-display text-2xl font-semibold tracking-tight">NextRound</p>
-            </div>
+            <Logo markClassName="bg-white" wordmarkClassName="text-white" />
             <p className="mt-0.5 text-sm text-brand-100">Campus Placement Portal</p>
           </div>
 
@@ -59,11 +57,10 @@ export default function LoginPage() {
         </div>
 
         <div className="p-8 md:p-10">
-          <div className="mb-6 flex items-center gap-2 md:hidden">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-brand-500" aria-hidden />
-            <p className="font-display text-2xl font-semibold tracking-tight text-slate-900">NextRound</p>
+          <div className="mb-6 md:hidden">
+            <Logo />
           </div>
-          <h1 className="font-display text-3xl tracking-tight text-slate-900">Sign in</h1>
+          <h1 className="font-display text-3xl font-medium leading-[1.15] tracking-[-0.01em] text-slate-900">Sign in</h1>
           <p className="mt-1 text-sm text-slate-500">Use a demo account below or your own credentials.</p>
 
           <form action={formAction} className="mt-6 space-y-4">
@@ -96,7 +93,7 @@ export default function LoginPage() {
               />
             </div>
             {state.error && (
-              <p id="login-error" role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-inset ring-rose-600/20">
+              <p id="login-error" role="alert" className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-900/15">
                 {state.error}
               </p>
             )}

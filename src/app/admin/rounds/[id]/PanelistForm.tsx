@@ -24,7 +24,7 @@ export default function PanelistForm({
         </select>
       </div>
       <SubmitButton>Assign</SubmitButton>
-      {state.ok && <p className="w-full rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.ok}</p>}
+      {state.ok && <p className="w-full rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.ok}</p>}
     </form>
   );
 }

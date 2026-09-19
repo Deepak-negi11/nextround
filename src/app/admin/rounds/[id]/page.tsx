@@ -54,7 +54,7 @@ export default async function RoundManage({ params }: { params: Promise<{ id: st
             {round.roundStatus === "ANNOUNCED" && (
               <form action={publishRoundResults}>
                 <input type="hidden" name="roundId" value={round.id} />
-                <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500">
+                <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
                   ✅ Publish results ({round.results.length} recorded)
                 </button>
               </form>

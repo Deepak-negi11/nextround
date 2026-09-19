@@ -32,7 +32,7 @@ export default async function OffersPage() {
               <p className="text-sm text-slate-600">{app.drive.jobRole}</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-emerald-600">₹{Number(offer.package)} LPA</p>
+              <p className="text-2xl font-bold text-slate-900">₹{Number(offer.package)} LPA</p>
               <Badge tone={STATUS_TONE[offer.offerStatus]}>{pretty(offer.offerStatus)}</Badge>
             </div>
           </div>
@@ -43,7 +43,7 @@ export default async function OffersPage() {
               <form action={respondToOffer}>
                 <input type="hidden" name="offerId" value={offer.id} />
                 <input type="hidden" name="accept" value="1" />
-                <SubmitButton className="bg-emerald-600 hover:bg-emerald-500">Accept offer</SubmitButton>
+                <SubmitButton className="bg-slate-900 hover:bg-slate-700">Accept offer</SubmitButton>
               </form>
               <form action={respondToOffer}>
                 <input type="hidden" name="offerId" value={offer.id} />

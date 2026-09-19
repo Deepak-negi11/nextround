@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Logo } from "./Logo";
 
 const LINKS = [
   { href: "#features", label: "Features" },
@@ -50,17 +51,7 @@ export default function LandingNav() {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-8">
-        <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-sm bg-brand-500"
-            aria-hidden
-          />
-          <span
-            className="font-display text-2xl font-semibold tracking-tight text-slate-900"
-          >
-            NextRound
-          </span>
-        </Link>
+        <Logo onClick={() => setOpen(false)} />
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Landing">
           {LINKS.map((l) => (

@@ -1,47 +1,19 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { BarChart3, CalendarDays, ClipboardCheck, ListChecks, Route, ShieldCheck } from "lucide-react";
 import { getSessionUser, homeFor } from "@/lib/auth";
 import LandingNav from "@/components/LandingNav";
+import { Logo } from "@/components/Logo";
 import { overlineCls } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const STATS = [
   { value: "100%", label: "Eligibility-checked drives" },
   { value: "4+", label: "Round types per drive" },
   { value: "3", label: "Roles, one portal" },
   { value: "1:1", label: "Senior roadmaps to offers" },
-];
-
-const FEATURES = [
-  {
-    title: "Eligibility-checked drives",
-    desc: "Students only see the companies they actually qualify for — no noise, no false hope.",
-    path: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
-  },
-  {
-    title: "Flexible rounds",
-    desc: "Aptitude, coding, group discussions, interviews — online or offline, in any order.",
-    path: "M4 6h16M4 12h10M4 18h7",
-  },
-  {
-    title: "Round logistics",
-    desc: "Slots, panels and venues scheduled per round, so interview day just works.",
-    path: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
-  },
-  {
-    title: "Outcomes & offers",
-    desc: "Interviewers record outcomes live; offers roll out the moment a round closes.",
-    path: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z",
-  },
-  {
-    title: "Live placement analytics",
-    desc: "Drives, rounds and offers tracked end-to-end, so reports write themselves.",
-    path: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
-  },
-  {
-    title: "Senior roadmaps",
-    desc: "Real journeys from seniors who landed the offer — the exact rounds and prep that worked.",
-    path: "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7",
-  },
 ];
 
 const STEPS = [
@@ -106,21 +78,17 @@ export default async function Home() {
             roadmaps — everything a placement cell needs, in one portal.
           </p>
           <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
-            <Link
-              href="/login"
-              className="inline-flex items-center rounded-xl bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:-translate-y-0.5 hover:bg-brand-600"
-            >
-              Sign in to the portal
-            </Link>
-            <a
-              href="#how"
-              className="inline-flex items-center gap-1.5 rounded-xl px-6 py-3 text-sm font-semibold text-slate-800 ring-1 ring-inset ring-slate-900/15 transition hover:bg-white/60"
-            >
-              See how it works
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 5v14m0 0l-6-6m6 6l6-6" />
-              </svg>
-            </a>
+            <Button asChild size="lg" className="shadow-brand-500/20">
+              <Link href="/login">Sign in to the portal</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="bg-white/60">
+              <a href="#how">
+                See how it works
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 5v14m0 0l-6-6m6 6l6-6" />
+                </svg>
+              </a>
+            </Button>
           </div>
         </div>
       </section>
@@ -143,21 +111,116 @@ export default async function Home() {
         <h2 className="mt-2 max-w-xl text-balance font-display text-4xl leading-[1.1] tracking-tight md:text-5xl">
           Built for how placements <em className="font-semibold">actually</em> work.
         </h2>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="group rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-md"
-            >
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600 transition group-hover:bg-brand-500 group-hover:text-white">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d={f.path} />
-                </svg>
-              </span>
-              <h3 className="mt-4 font-display text-2xl font-medium leading-[1.25]">{f.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{f.desc}</p>
+        {/* Bento grid */}
+        <div className="mt-12 grid gap-4 md:grid-cols-6">
+          {/* Eligibility — wide cell with a live-gate preview */}
+          <Card className="p-6 md:col-span-4">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
+            <CardTitle className="mt-4 text-xl">Eligibility-checked drives</CardTitle>
+            <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground">
+              Students only see the companies they actually qualify for — no noise, no false hope.
+            </p>
+            <div className="mt-6 space-y-2" aria-hidden>
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono text-xs">
+                <span>Aarav Sharma · CSE · CGPA 8.6</span>
+                <Badge>Eligible</Badge>
+              </div>
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono text-xs">
+                <span>Ishita Verma · ECE · CGPA 6.2</span>
+                <Badge variant="outline">CGPA below 7.0</Badge>
+              </div>
             </div>
-          ))}
+          </Card>
+
+          {/* Rounds — flow list */}
+          <Card className="p-6 md:col-span-2">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
+              <ListChecks className="h-4 w-4" />
+            </span>
+            <CardTitle className="mt-4 text-xl">Flexible rounds</CardTitle>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Any order, online or offline.</p>
+            <ol className="mt-6 space-y-1.5" aria-hidden>
+              {["Aptitude test", "Online coding", "Group discussion", "Technical interview", "HR interview"].map((round, i) => (
+                <li key={round} className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-secondary font-mono text-[10px] text-foreground">{i + 1}</span>
+                  {round}
+                </li>
+              ))}
+            </ol>
+          </Card>
+
+          {/* Logistics — slots preview */}
+          <Card className="p-6 md:col-span-2">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
+              <CalendarDays className="h-4 w-4" />
+            </span>
+            <CardTitle className="mt-4 text-xl">Round logistics</CardTitle>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Slots, panels and venues per round.</p>
+            <div className="mt-6 space-y-2" aria-hidden>
+              <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-xs">
+                <span className="font-mono">09:30</span>
+                <Badge>Booked</Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-xs">
+                <span className="font-mono">10:30</span>
+                <Badge variant="outline">Open</Badge>
+              </div>
+            </div>
+          </Card>
+
+          {/* Outcomes */}
+          <Card className="p-6 md:col-span-2">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
+              <ClipboardCheck className="h-4 w-4" />
+            </span>
+            <CardTitle className="mt-4 text-xl">Outcomes & offers</CardTitle>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Interviewers record results live.</p>
+            <div className="mt-6 flex flex-wrap gap-2" aria-hidden>
+              <Badge>Selected</Badge>
+              <Badge variant="secondary">Next round</Badge>
+              <Badge variant="outline">Rejected</Badge>
+            </div>
+          </Card>
+
+          {/* Analytics — mini bar chart */}
+          <Card className="p-6 md:col-span-2">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
+              <BarChart3 className="h-4 w-4" />
+            </span>
+            <CardTitle className="mt-4 text-xl">Live analytics</CardTitle>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Reports write themselves.</p>
+            <div className="mt-6 flex h-20 items-end gap-2" aria-hidden>
+              {[40, 70, 55, 90, 65].map((height, i) => (
+                <div key={i} className="w-full rounded-t-sm bg-primary" style={{ height: `${height}%` }} />
+              ))}
+            </div>
+          </Card>
+
+          {/* Roadmaps — full-width timeline */}
+          <Card className="p-6 md:col-span-6">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div className="max-w-sm">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
+                  <Route className="h-4 w-4" />
+                </span>
+                <CardTitle className="mt-4 text-xl">Senior roadmaps</CardTitle>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  Real journeys from seniors who landed the offer — the exact rounds and prep that worked.
+                </p>
+              </div>
+              <ol className="flex flex-1 items-center gap-2 text-xs text-muted-foreground" aria-hidden>
+                {["2nd yr: DSA", "3rd yr: intern", "Interviews", "PPO · 50 LPA"].map((step, i, arr) => (
+                  <li key={step} className="flex flex-1 items-center gap-2 last:flex-none">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary font-mono text-[10px] text-primary-foreground">{i + 1}</span>
+                    <span className="whitespace-nowrap">{step}</span>
+                    {i < arr.length - 1 && <span className="h-px flex-1 bg-border" />}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </Card>
         </div>
       </section>
 
@@ -221,10 +284,7 @@ export default async function Home() {
 
       <footer className="border-t border-slate-200/80 py-10 text-slate-400">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-center md:flex-row md:px-8 md:text-left">
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-brand-500" aria-hidden />
-            <span className="font-display text-xl font-semibold tracking-tight text-slate-900">NextRound</span>
-          </div>
+          <Logo />
           <p className="text-xs">Placement drives · Rounds · Offers · Roadmaps — for your campus.</p>
         </div>
       </footer>
