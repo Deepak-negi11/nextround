@@ -11,6 +11,7 @@ const NAV: Record<SessionUser["role"], { href: string; label: string }[]> = {
   STUDENT: [
     { href: "/student", label: "Dashboard" },
     { href: "/student/drives", label: "Drives" },
+    { href: "/student/internships", label: "Internship Finder" },
     { href: "/student/applications", label: "My Applications" },
     { href: "/student/offers", label: "Offers" },
     { href: "/student/profile", label: "My Profile" },

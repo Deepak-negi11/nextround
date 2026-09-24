@@ -43,12 +43,12 @@ const ROLES = [
   {
     role: "Placement Admin",
     desc: "Run companies, drives, rounds, slots and offers from one console — with analytics that update themselves.",
-    accent: "from-brand-600 to-brand-800",
+    accent: "from-brand-500 to-brand-700",
   },
   {
     role: "Interviewers",
     desc: "Get your panel, your slots and your candidates — record outcomes the moment an interview ends.",
-    accent: "from-brand-400 to-brand-600",
+    accent: "from-brand-500 to-brand-700",
   },
 ];
 
@@ -64,7 +64,7 @@ export default async function Home() {
       {/* Hero */}
       <section className="relative">
         <div className="relative mx-auto flex max-w-6xl flex-col items-center px-4 pb-44 pt-36 text-center md:px-8 md:pb-52 md:pt-44">
-          <p className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-1.5 text-xs font-medium tracking-wide text-brand-500 ring-1 ring-inset ring-brand-500/20">
+          <p className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-1.5 text-xs font-medium tracking-wide text-brand-700 ring-1 ring-inset ring-brand-500/30">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand-500" aria-hidden />
             Campus placement portal
           </p>
@@ -78,7 +78,7 @@ export default async function Home() {
             roadmaps — everything a placement cell needs, in one portal.
           </p>
           <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
-            <Button asChild size="lg" className="shadow-brand-500/20">
+            <Button asChild size="lg" className="shadow-brand-500/40">
               <Link href="/login">Sign in to the portal</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="bg-white/60">
@@ -193,7 +193,7 @@ export default async function Home() {
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Reports write themselves.</p>
             <div className="mt-6 flex h-20 items-end gap-2" aria-hidden>
               {[40, 70, 55, 90, 65].map((height, i) => (
-                <div key={i} className="w-full rounded-t-sm bg-primary" style={{ height: `${height}%` }} />
+                <div key={i} className={`w-full rounded-t-sm ${i === 3 ? "bg-brand-700" : "bg-brand-400"}`} style={{ height: `${height}%` }} />
               ))}
             </div>
           </Card>
@@ -274,7 +274,7 @@ export default async function Home() {
           </p>
           <Link
             href="/login"
-            className="mt-8 inline-flex items-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-900/20 transition hover:-translate-y-0.5 hover:bg-brand-700"
+            className="mt-8 inline-flex items-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:-translate-y-0.5 hover:bg-brand-700"
           >
             Sign in
           </Link>

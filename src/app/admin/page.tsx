@@ -70,7 +70,7 @@ export default async function AdminDashboard() {
                   <td className="py-2.5">{v.placed}</td>
                   <td className="py-2.5">
                     <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100">
-                      <div className="h-full rounded-full bg-slate-900" style={{ width: `${(v.placed / v.total) * 100}%` }} />
+                      <div className="h-full rounded-full bg-brand-600" style={{ width: `${(v.placed / v.total) * 100}%` }} />
                     </div>
                   </td>
                 </tr>

@@ -19,8 +19,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="bg-slate-50 font-sans text-slate-900 antialiased">{children}</body>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
+    >
+      {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla) inject
+          attributes like cz-shortcut-listen onto <body> before React hydrates. */}
+      <body suppressHydrationWarning className="bg-slate-50 font-sans text-slate-900 antialiased">
+        {children}
+      </body>
     </html>
   );
 }
