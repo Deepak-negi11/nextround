@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { Badge, Card, PageHeader, StatCard, STATUS_TONE, pretty } from "@/components/ui";
+import { markNotificationsRead } from "@/actions/student";
 
 export default async function StudentDashboard() {
   const user = await requireRole("STUDENT");
@@ -18,11 +19,14 @@ export default async function StudentDashboard() {
   });
   if (!student) return <p>No student profile found.</p>;
 
-  const notifications = await prisma.notification.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
+  const [notifications, unreadCount] = await Promise.all([
+    prisma.notification.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.notification.count({ where: { userId: user.id, readAt: null } }),
+  ]);
 
   const active = student.applications.filter(
     (a) => !["REJECTED", "OFFER_ACCEPTED", "OFFER_DECLINED"].includes(a.applicationStatus)
@@ -48,7 +52,16 @@ export default async function StudentDashboard() {
         <StatCard label="Total applied" value={student.applications.length} />
       </div>
 
-      <Card title="Latest updates">
+      <Card
+        title={unreadCount > 0 ? `Latest updates · ${unreadCount} new` : "Latest updates"}
+        actions={
+          unreadCount > 0 ? (
+            <form action={markNotificationsRead}>
+              <button className="text-xs font-medium text-brand-600 hover:text-brand-700 hover:underline">Mark all as read</button>
+            </form>
+          ) : undefined
+        }
+      >
         {notifications.length === 0 ? (
           <p className="text-sm text-slate-500">Nothing yet — drive openings, round announcements and results will land here.</p>
         ) : (
@@ -56,7 +69,10 @@ export default async function StudentDashboard() {
             {notifications.map((n) => (
               <li key={n.id} className="py-2.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-sm font-medium text-slate-900">{n.title}</p>
+                  <p className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                    {n.title}
+                    {!n.readAt && <Badge tone="brand">New</Badge>}
+                  </p>
                   <p className="text-xs text-slate-400">{new Date(n.createdAt).toLocaleString()}</p>
                 </div>
                 <p className="text-sm text-slate-500">{n.body}</p>

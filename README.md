@@ -24,14 +24,13 @@ npx prisma db seed   # or: bun run db:seed
 bun run dev       # or: npm run dev → http://localhost:3000
 ```
 
-## Demo accounts
+## Demo accounts (created by `prisma/seed.ts`)
 
 | Role | Email | Password |
 |---|---|---|
 | Placement Admin | `admin@college.edu` | `admin123` |
-| Interviewer (Amazon) | `interviewer@amazon.com` | `int123` |
-| Recruiter (JP Morgan) | `recruiter@jpmorgan.com` | `int123` |
-| Students | `aarav0@college.edu` … `ishita7@college.edu` | `student123` |
+| Interviewer | `interviewer@college.edu` | `int123` |
+| Student (CSE, CGPA 8.5) | `student@college.edu` | `student123` |
 
 ## The flow (from the whiteboard)
 
@@ -50,7 +49,11 @@ bun run dev       # or: npm run dev → http://localhost:3000
 
 ## Seeded demo state
 
-- **Amazon — Software Engineer Intern** (₹45 LPA, CSE/IT, CGPA ≥ 7.0, no backlog): published, 4 applied, Aptitude completed (3 shortlisted, 1 rejected), Technical Interview announced with slots and an assigned interviewer — **record outcomes as the interviewer, publish as admin, issue an offer, accept it as the student**.
-- **JP Morgan — Software Engineer Analyst** (₹22 LPA, CSE/IT/ECE, CGPA ≥ 6.0, ≤1 backlog): published, open to apply.
-- **Google — STEP Intern**: draft (try the full authoring flow).
-- 4 senior roadmaps.
+The seed creates only the three accounts above. Everything else is created in the app:
+
+- **Admin → Companies / Drives** — companies, drives, eligibility, rounds, slots, panelists, results, offers.
+- **Admin → Users** — add students and interviewers/recruiters.
+- **Admin → Roadmaps** — publish senior roadmaps (shown to students).
+- **/register** — students sign up themselves with a college email. Allowed domains come from
+  `STUDENT_EMAIL_DOMAINS` in `.env` (comma-separated, default `college.edu`), e.g.
+  `STUDENT_EMAIL_DOMAINS="college.edu,gehu.ac.in"`.

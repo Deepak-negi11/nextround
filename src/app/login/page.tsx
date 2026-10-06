@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { login, type LoginState } from "@/actions/auth";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -99,6 +100,10 @@ export default function LoginPage() {
             )}
             <SubmitButton className="w-full py-2.5">Sign in</SubmitButton>
           </form>
+          <p className="mt-4 text-center text-sm text-slate-500">
+            New student?{" "}
+            <Link href="/register" className="font-medium text-brand-600 hover:text-brand-700 hover:underline">Create an account</Link>
+          </p>
 
           <div className="mt-6 space-y-2 border-t border-slate-100 pt-4">
             <p className={`${overlineCls} text-slate-400`}>Demo accounts</p>

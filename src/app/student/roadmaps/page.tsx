@@ -10,10 +10,13 @@ export default async function RoadmapsPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader
         title="Senior roadmaps 🚀"
-        subtitle="How seniors from your college actually landed Google, Amazon, Microsoft and JP Morgan — DSA route, AI/ML route, and more."
+        subtitle="How seniors from your college actually landed their offers — DSA route, AI/ML route, and more."
       />
 
       <div className="grid gap-4">
+        {roadmaps.length === 0 && (
+          <p className="text-sm text-slate-500">No roadmaps published yet. Your placement cell adds them as seniors get placed.</p>
+        )}
         {roadmaps.map((rm) => (
           <article key={rm.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">

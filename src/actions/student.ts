@@ -133,3 +133,12 @@ export async function respondToOffer(formData: FormData) {
   revalidatePath("/student/offers");
   revalidatePath("/student");
 }
+
+export async function markNotificationsRead() {
+  const user = await requireRole("STUDENT");
+  await prisma.notification.updateMany({
+    where: { userId: user.id, readAt: null },
+    data: { readAt: new Date() },
+  });
+  revalidatePath("/student");
+}

@@ -5,8 +5,8 @@ import { useActionState } from "react";
 import type { ActionState } from "@/actions/admin";
 import { SubmitButton } from "@/components/SubmitButton";
 import { inputCls, labelCls } from "@/components/ui";
+import { BRANCHES } from "@/lib/constants";
 
-const BRANCHES = ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"];
 
 export default function DriveForm({
   companies,
