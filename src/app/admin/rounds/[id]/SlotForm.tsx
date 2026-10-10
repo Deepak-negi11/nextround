@@ -24,7 +24,7 @@ export default function SlotForm({ roundId }: { roundId: number }) {
         <input id="venue" name="venue" placeholder="C-204" className={inputCls} />
       </div>
       <SubmitButton>+ Add slot</SubmitButton>
-      {state.error && <p className="w-full rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.error}</p>}
+      {state.error && <p role="alert" className="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
     </form>
   );
 }

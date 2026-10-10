@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/auth";
 import { Card, PageHeader } from "@/components/ui";
 import StudentForm from "./StudentForm";
 import InterviewerForm from "./InterviewerForm";
+import StudentRow from "./StudentRow";
 
 export default async function UsersPage() {
   await requireRole("ADMIN");
@@ -30,23 +31,28 @@ export default async function UsersPage() {
           <p className="text-sm text-slate-500">No students yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full min-w-[900px] text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-400">
-                  <th className="pb-2">Roll no</th><th className="pb-2">Name</th><th className="pb-2">Email</th><th className="pb-2">Branch</th><th className="pb-2">CGPA</th><th className="pb-2">Backlogs</th><th className="pb-2">Batch</th>
+                  <th className="pb-2">University roll no</th><th className="pb-2">Enrollment no</th><th className="pb-2">Name</th><th className="pb-2">Email</th><th className="pb-2">Branch</th><th className="pb-2">CGPA</th><th className="pb-2">Backlogs</th><th className="pb-2">Batch</th><th className="pb-2"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {students.map((s) => (
-                  <tr key={s.id}>
-                    <td className="py-2.5 font-mono text-slate-500">{s.rollNo}</td>
-                    <td className="py-2.5 font-medium">{s.user.name}</td>
-                    <td className="py-2.5 text-slate-600">{s.user.email}</td>
-                    <td className="py-2.5">{s.branch}</td>
-                    <td className="py-2.5">{s.cgpa.toFixed(2)}</td>
-                    <td className="py-2.5">{s.activeBacklogs}</td>
-                    <td className="py-2.5">{s.graduationYear}</td>
-                  </tr>
+                  <StudentRow
+                    key={s.id}
+                    s={{
+                      id: s.id,
+                      rollNo: s.rollNo,
+                      enrollmentNo: s.enrollmentNo,
+                      name: s.user.name,
+                      email: s.user.email,
+                      branch: s.branch,
+                      cgpa: s.cgpa,
+                      activeBacklogs: s.activeBacklogs,
+                      graduationYear: s.graduationYear,
+                    }}
+                  />
                 ))}
               </tbody>
             </table>

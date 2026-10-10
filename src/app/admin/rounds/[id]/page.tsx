@@ -10,21 +10,22 @@ import PanelistForm from "./PanelistForm";
 export default async function RoundManage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await requireRole("ADMIN");
-  const round = await prisma.round.findUnique({
-    where: { id: parseInt(id) },
-    include: {
-      drive: { include: { company: true } },
-      slots: { orderBy: { startAt: "asc" }, include: { bookedByApplication: { include: { student: { include: { user: true } } } } } },
-      panelists: { include: { interviewer: true } },
-      results: { include: { application: { include: { student: { include: { user: true } } } } } },
-    },
-  });
+  const [round, interviewers] = await Promise.all([
+    prisma.round.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        drive: { include: { company: true } },
+        slots: { orderBy: { startAt: "asc" }, include: { bookedByApplication: { include: { student: { include: { user: true } } } } } },
+        panelists: { include: { interviewer: true } },
+        results: { include: { application: { include: { student: { include: { user: true } } } } } },
+      },
+    }),
+    prisma.user.findMany({
+      where: { role: "INTERVIEWER" },
+      orderBy: { name: "asc" },
+    }),
+  ]);
   if (!round) notFound();
-
-  const interviewers = await prisma.user.findMany({
-    where: { role: "INTERVIEWER" },
-    orderBy: { name: "asc" },
-  });
 
   const isInterview = /interview/i.test(round.roundType);
 

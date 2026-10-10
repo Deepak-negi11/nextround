@@ -3,9 +3,13 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// DATABASE_URL — what the app uses at runtime (Supabase: the pooled connection, port 6543).
+// DIRECT_URL   — what `prisma migrate` uses (Supabase: the direct/session connection, port 5432).
+// For local Postgres, set both to the same URL.
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -117,7 +121,10 @@ model Student {
   id             Int          @id @default(autoincrement())
   userId         Int          @unique
   user           User         @relation(fields: [userId], references: [id])
-  rollNo         String       @unique
+  rollNo         String       @unique // University roll number
+  // University enrollment number. Optional only so students created before this field
+  // existed stay valid; sign-up and admin forms require it. Postgres allows many NULLs under UNIQUE.
+  enrollmentNo   String?      @unique
   branch         String
   cgpa           Float
   activeBacklogs Int          @default(0)

@@ -8,17 +8,19 @@ import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function DrivesPage() {
   const user = await requireRole("STUDENT");
-  const student = await prisma.student.findUnique({
-    where: { userId: user.id },
-    include: { applications: true },
-  });
+  // Independent queries — run them together instead of one after the other.
+  const [student, drives] = await Promise.all([
+    prisma.student.findUnique({
+      where: { userId: user.id },
+      include: { applications: true },
+    }),
+    prisma.drive.findMany({
+      where: { driveStatus: "PUBLISHED" },
+      include: { company: true, eligibilityRule: true, branches: true, rounds: true, _count: { select: { applications: true } } },
+      orderBy: { applicationDeadline: "asc" },
+    }),
+  ]);
   if (!student) return <p>No student profile found.</p>;
-
-  const drives = await prisma.drive.findMany({
-    where: { driveStatus: "PUBLISHED" },
-    include: { company: true, eligibilityRule: true, branches: true, rounds: true, _count: { select: { applications: true } } },
-    orderBy: { applicationDeadline: "asc" },
-  });
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

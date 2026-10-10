@@ -15,7 +15,9 @@ export default async function ProfilePage() {
       <ProfileForm
         initial={{
           name: user.name,
+          email: user.email,
           rollNo: student.rollNo,
+          enrollmentNo: student.enrollmentNo ?? "",
           branch: student.branch,
           cgpa: student.cgpa,
           activeBacklogs: student.activeBacklogs,

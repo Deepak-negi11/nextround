@@ -47,6 +47,7 @@ async function main() {
     create: {
       userId: studentUser.id,
       rollNo: "2K23/CSE/101",
+      enrollmentNo: "DEMO-ENR-0001",
       branch: "CSE",
       cgpa: 8.5,
       activeBacklogs: 0,

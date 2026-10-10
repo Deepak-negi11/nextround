@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
-import { parseAccount, parseStudent } from "@/lib/validation";
-import { createInterviewerAccount, createStudentAccount } from "@/lib/accounts";
+import { prisma } from "@/lib/prisma";
+import { checkIds, normalizeId, parseAccount, parseStudent } from "@/lib/validation";
+import { createInterviewerAccount, createStudentAccount, duplicateMessage } from "@/lib/accounts";
 
 export type ActionState = { error?: string; ok?: string };
 
@@ -38,4 +39,31 @@ export async function createInterviewer(_prev: ActionState, formData: FormData):
   refreshUserViews();
   revalidatePath("/admin/rounds/[id]", "page"); // panelist dropdowns list interviewers
   return { ok: `Interviewer ${result.user.name} added. You can now assign them to rounds.` };
+}
+
+// University IDs are locked for students after sign-up; only the placement admin can correct them.
+export type IdsState = ActionState & { ids?: { rollNo: string; enrollmentNo: string } };
+
+export async function updateStudentIds(_prev: IdsState, formData: FormData): Promise<IdsState> {
+  await requireRole("ADMIN");
+  const studentId = Number(formData.get("studentId"));
+  const rollNo = normalizeId(String(formData.get("rollNo") ?? ""));
+  const enrollmentNo = normalizeId(String(formData.get("enrollmentNo") ?? ""));
+  if (!Number.isInteger(studentId)) return { error: "Invalid request." };
+
+  const idError = checkIds(rollNo, enrollmentNo);
+  if (idError) return { error: idError };
+
+  try {
+    await prisma.student.update({ where: { id: studentId }, data: { rollNo, enrollmentNo } });
+  } catch (e) {
+    const message = duplicateMessage(e);
+    if (message) return { error: message };
+    throw e;
+  }
+
+  refreshUserViews();
+  revalidatePath("/student/profile");
+  // Echo the saved (normalised) values so the row can show them before the page data refreshes.
+  return { ok: "IDs updated.", ids: { rollNo, enrollmentNo } };
 }

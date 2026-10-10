@@ -6,12 +6,13 @@ import { Badge, Card, PageHeader, StatCard, STATUS_TONE, pretty } from "@/compon
 export default async function AdminDashboard() {
   await requireRole("ADMIN");
 
-  const [students, drives, companies, applications, offers] = await Promise.all([
+  const [students, drives, companies, applications, offers, branchCounts] = await Promise.all([
     prisma.student.count(),
     prisma.drive.findMany({ include: { company: true, _count: { select: { applications: true } } }, orderBy: { createdAt: "desc" } }),
     prisma.company.count(),
     prisma.application.findMany({ select: { applicationStatus: true } }),
     prisma.offer.findMany({ include: { application: { include: { drive: { include: { company: true } }, student: { include: { user: true } } } } } }),
+    prisma.student.groupBy({ by: ["branch"], _count: { _all: true } }),
   ]);
 
   const placed = offers.filter((o) => o.offerStatus === "ACCEPTED");
@@ -22,16 +23,13 @@ export default async function AdminDashboard() {
   const selected = applications.filter((a) => ["SELECTED", "OFFERED", "OFFER_ACCEPTED", "OFFER_DECLINED"].includes(a.applicationStatus)).length;
   const selectionRate = applications.length ? Math.round((selected / applications.length) * 100) : 0;
 
+  // Branch totals come from a groupBy; "placed" = distinct students holding an accepted offer.
   const byBranch: Record<string, { total: number; placed: number }> = {};
-  const allStudents = await prisma.student.findMany({
-    include: { applications: { include: { offers: true } } },
-  });
-  for (const s of allStudents) {
-    byBranch[s.branch] ??= { total: 0, placed: 0 };
-    byBranch[s.branch].total += 1;
-    if (s.applications.some((a) => a.offers.some((o) => o.offerStatus === "ACCEPTED"))) {
-      byBranch[s.branch].placed += 1;
-    }
+  for (const b of branchCounts) byBranch[b.branch] = { total: b._count._all, placed: 0 };
+  const placedStudents = new Map(placed.map((o) => [o.application.studentId, o.application.student.branch]));
+  for (const branch of placedStudents.values()) {
+    byBranch[branch] ??= { total: 0, placed: 0 };
+    byBranch[branch].placed += 1;
   }
 
   return (

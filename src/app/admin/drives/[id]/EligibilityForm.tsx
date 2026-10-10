@@ -40,8 +40,8 @@ export default function EligibilityForm({
           ))}
         </div>
       </div>
-      {state.error && <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.error}</p>}
-      {state.ok && <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.ok}</p>}
+      {state.error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.ok && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{state.ok}</p>}
       <SubmitButton>Update rules</SubmitButton>
     </form>
   );

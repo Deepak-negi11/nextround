@@ -4,7 +4,8 @@ import { BRANCHES } from "./constants";
 
 export type AccountInput = { name: string; email: string; password: string };
 export type StudentInput = AccountInput & {
-  rollNo: string;
+  rollNo: string; // university roll number
+  enrollmentNo: string;
   branch: string;
   cgpa: number;
   activeBacklogs: number;
@@ -18,6 +19,19 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const str = (fd: FormData, key: string) => String(fd.get(key) ?? "").trim();
 // Strict integer parse: "" and "1.5" are rejected instead of silently becoming 0 / 1.
 const int = (fd: FormData, key: string) => (/^\d+$/.test(str(fd, key)) ? Number(str(fd, key)) : NaN);
+
+// University IDs: trimmed and upper-cased so "2k23/cse/101" and "2K23/CSE/101" can't both register.
+const ID_RE = /^[A-Z0-9][A-Z0-9/._-]{0,39}$/;
+export function normalizeId(raw: string) {
+  return raw.trim().replace(/\s+/g, "").toUpperCase();
+}
+
+// Validates the two university IDs; returns an error message or null.
+export function checkIds(rollNo: string, enrollmentNo: string): string | null {
+  if (!ID_RE.test(rollNo)) return "University roll number is required (letters, digits, / . _ - only; max 40).";
+  if (!ID_RE.test(enrollmentNo)) return "Enrollment number is required (letters, digits, / . _ - only; max 40).";
+  return null;
+}
 
 export function parseAccount(fd: FormData): Parsed<AccountInput> {
   const name = str(fd, "name");
@@ -39,21 +53,23 @@ export function parseStudent(fd: FormData): Parsed<StudentInput> {
   const account = parseAccount(fd);
   if (!account.ok) return account;
 
-  const rollNo = str(fd, "rollNo");
+  const rollNo = normalizeId(str(fd, "rollNo"));
+  const enrollmentNo = normalizeId(str(fd, "enrollmentNo"));
   const branch = str(fd, "branch");
   const cgpaRaw = str(fd, "cgpa");
   const cgpa = cgpaRaw ? Number(cgpaRaw) : NaN;
   const activeBacklogs = int(fd, "activeBacklogs");
   const graduationYear = int(fd, "graduationYear");
 
-  if (!rollNo || rollNo.length > 40) return { ok: false, error: "Roll number is required (max 40 characters)." };
+  const idError = checkIds(rollNo, enrollmentNo);
+  if (idError) return { ok: false, error: idError };
   if (!BRANCHES.includes(branch)) return { ok: false, error: "Select a valid branch." };
   if (isNaN(cgpa) || cgpa < 0 || cgpa > 10) return { ok: false, error: "CGPA must be between 0 and 10." };
   if (isNaN(activeBacklogs) || activeBacklogs > 50) return { ok: false, error: "Active backlogs must be a whole number (0 or more)." };
   if (isNaN(graduationYear) || graduationYear < 2000 || graduationYear > 2100)
     return { ok: false, error: "Graduation year looks invalid." };
 
-  return { ok: true, data: { ...account.data, rollNo, branch, cgpa, activeBacklogs, graduationYear } };
+  return { ok: true, data: { ...account.data, rollNo, enrollmentNo, branch, cgpa, activeBacklogs, graduationYear } };
 }
 
 // Self sign-up is limited to college email domains. Configure with

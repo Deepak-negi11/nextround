@@ -26,8 +26,12 @@ export default function StudentForm() {
           <input id="s-password" name="password" type="text" required minLength={MIN_PASSWORD_LENGTH} autoComplete="off" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls} htmlFor="s-rollNo">Roll no *</label>
-          <input id="s-rollNo" name="rollNo" required maxLength={40} className={inputCls} placeholder="2K23/CSE/101" />
+          <label className={labelCls} htmlFor="s-rollNo">University roll no *</label>
+          <input id="s-rollNo" name="rollNo" required maxLength={40} className={`${inputCls} font-mono uppercase`} />
+        </div>
+        <div>
+          <label className={labelCls} htmlFor="s-enrollmentNo">Enrollment no *</label>
+          <input id="s-enrollmentNo" name="enrollmentNo" required maxLength={40} className={`${inputCls} font-mono uppercase`} />
         </div>
         <div>
           <label className={labelCls} htmlFor="s-branch">Branch *</label>
@@ -48,8 +52,8 @@ export default function StudentForm() {
           <input id="s-year" name="graduationYear" type="number" min="2000" max="2100" required className={inputCls} />
         </div>
       </div>
-      {state.error && <p role="alert" className="mt-3 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.error}</p>}
-      {state.ok && <p className="mt-3 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-900">{state.ok}</p>}
+      {state.error && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state.ok && <p role="status" className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{state.ok}</p>}
       <SubmitButton className="mt-4" pendingLabel="Adding…">Add student</SubmitButton>
     </form>
   );

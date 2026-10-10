@@ -2,29 +2,36 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { createSession, requireRole } from "@/lib/auth";
 import { checkEligibility } from "@/lib/eligibility";
 
 export type ActionState = { error?: string; ok?: string };
 
 export async function updateProfile(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireRole("STUDENT");
+  const name = String(formData.get("name") ?? "").trim();
   const cgpa = parseFloat(String(formData.get("cgpa")));
   const activeBacklogs = parseInt(String(formData.get("activeBacklogs")));
   const branch = String(formData.get("branch")).trim();
   const graduationYear = parseInt(String(formData.get("graduationYear")));
   const resumeLink = String(formData.get("resumeLink") || "").trim() || null;
 
+  if (!name || name.length > 100) return { error: "Name is required (max 100 characters)." };
   if (isNaN(cgpa) || cgpa < 0 || cgpa > 10) return { error: "CGPA must be between 0 and 10." };
   if (isNaN(activeBacklogs) || activeBacklogs < 0) return { error: "Backlogs must be 0 or more." };
   if (!branch) return { error: "Branch is required." };
+  if (isNaN(graduationYear) || graduationYear < 2000 || graduationYear > 2100)
+    return { error: "Graduation year looks invalid." };
 
-  await prisma.student.update({
-    where: { userId: user.id },
-    data: { cgpa, activeBacklogs, branch, graduationYear, resumeLink },
+  // Name lives on User, academics on Student — update both together.
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { name, student: { update: { cgpa, activeBacklogs, branch, graduationYear, resumeLink } } },
   });
-  revalidatePath("/student/profile");
-  revalidatePath("/student/drives");
+  // The session cookie carries the name shown in the sidebar, so refresh it when it changes.
+  if (name !== user.name) await createSession({ ...user, name });
+
+  revalidatePath("/student", "layout");
   return { ok: "Profile updated." };
 }
 

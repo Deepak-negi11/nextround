@@ -10,11 +10,13 @@ import { SubmitButton } from "@/components/SubmitButton";
 export default async function DriveDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireRole("STUDENT");
-  const student = await prisma.student.findUnique({ where: { userId: user.id }, include: { applications: true } });
-  const drive = await prisma.drive.findUnique({
-    where: { id: parseInt(id) },
-    include: { company: true, eligibilityRule: true, branches: true, rounds: { orderBy: { roundNumber: "asc" } } },
-  });
+  const [student, drive] = await Promise.all([
+    prisma.student.findUnique({ where: { userId: user.id }, include: { applications: true } }),
+    prisma.drive.findUnique({
+      where: { id: parseInt(id) },
+      include: { company: true, eligibilityRule: true, branches: true, rounds: { orderBy: { roundNumber: "asc" } } },
+    }),
+  ]);
   if (!student || !drive) notFound();
 
   const rules = {

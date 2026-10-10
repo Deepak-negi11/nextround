@@ -8,29 +8,32 @@ import OutcomeForm from "./OutcomeForm";
 export default async function InterviewerRound({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireRole("INTERVIEWER");
-  const round = await prisma.round.findUnique({
-    where: { id: parseInt(id) },
-    include: {
-      drive: { include: { company: true } },
-      panelists: true,
-      slots: { include: { bookedByApplication: { include: { student: { include: { user: true } } } } } },
-      results: true,
-    },
-  });
+  const roundId = parseInt(id);
+  // Candidates are fetched alongside the round (filtered by the round's drive) so the page
+  // makes one parallel trip to the database; they are only rendered after the panelist check below.
+  const [round, candidates] = await Promise.all([
+    prisma.round.findUnique({
+      where: { id: roundId },
+      include: {
+        drive: { include: { company: true } },
+        panelists: true,
+        slots: { include: { bookedByApplication: { include: { student: { include: { user: true } } } } } },
+        results: true,
+      },
+    }),
+    prisma.application.findMany({
+      where: {
+        drive: { rounds: { some: { id: roundId } } },
+        applicationStatus: { in: ["APPLIED", "IN_PROGRESS", "SELECTED"] },
+      },
+      include: { student: { include: { user: true } }, results: { where: { roundId } } },
+      orderBy: { appliedAt: "asc" },
+    }),
+  ]);
   if (!round) notFound();
 
   // Only assigned panelists can open this page
   if (!round.panelists.some((p) => p.interviewerId === user.id)) notFound();
-
-  // Candidates = active applications on this drive
-  const candidates = await prisma.application.findMany({
-    where: {
-      driveId: round.driveId,
-      applicationStatus: { in: ["APPLIED", "IN_PROGRESS", "SELECTED"] },
-    },
-    include: { student: { include: { user: true } }, results: { where: { roundId: round.id } } },
-    orderBy: { appliedAt: "asc" },
-  });
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">

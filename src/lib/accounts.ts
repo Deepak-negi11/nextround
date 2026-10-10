@@ -9,10 +9,11 @@ type Result = { ok: true; user: SessionUser } | { ok: false; error: string };
 
 // Turn unique-constraint violations into friendly messages. Relying on the DB constraint
 // (instead of a "check then insert") also covers two sign-ups racing for the same email.
-function duplicateMessage(e: unknown): string | null {
+export function duplicateMessage(e: unknown): string | null {
   if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
     const target = String(e.meta?.target ?? "");
-    if (target.includes("rollNo")) return "That roll number is already registered.";
+    if (target.includes("enrollmentNo")) return "That enrollment number is already registered.";
+    if (target.includes("rollNo")) return "That university roll number is already registered.";
     return "An account with that email already exists.";
   }
   return null;
@@ -31,6 +32,7 @@ export async function createStudentAccount(input: StudentInput): Promise<Result>
         student: {
           create: {
             rollNo: input.rollNo,
+            enrollmentNo: input.enrollmentNo,
             branch: input.branch,
             cgpa: input.cgpa,
             activeBacklogs: input.activeBacklogs,

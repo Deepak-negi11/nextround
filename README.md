@@ -24,6 +24,31 @@ npx prisma db seed   # or: bun run db:seed
 bun run dev       # or: npm run dev → http://localhost:3000
 ```
 
+## Using Supabase instead of local Postgres
+
+Supabase is hosted PostgreSQL, so Prisma works unchanged — only the connection strings change.
+
+1. Supabase dashboard → your project → **Connect** → **ORMs** → **Prisma**. Copy both strings.
+2. In `.env` (see `.env.example`), set:
+   - `DATABASE_URL` — for `next dev` / `next start`: the **session** pooler, port **5432**, ending in
+     `?connection_limit=5` (about 4× faster per query than the transaction pooler in testing).
+     On serverless hosts (Vercel) use the **transaction** pooler instead: port **6543**, ending in `?pgbouncer=true`.
+   - `DIRECT_URL` — session pooler / direct connection, port **5432** (used by `prisma migrate`)
+   - Replace `[YOUR-PASSWORD]` with the database password, **URL-encoded** if it has spaces or
+     symbols (space → `%20`, `@` → `%40`, `#` → `%23`).
+3. Create the tables and the demo accounts on Supabase:
+   ```bash
+   npx prisma migrate deploy
+   npx prisma db seed
+   ```
+4. `bun run dev`, then open http://localhost:3000/health — it should report `"database": {"status": "ok"}`.
+
+**Pick the region closest to your users.** Every query is a network round trip: from Delhi, a Sydney
+project costs ~450 ms per trip, while Mumbai (`ap-south-1`) is a few tens of ms. Region can't be changed
+after a project is created.
+
+Data is not copied automatically: the steps above give you an empty schema plus the three demo accounts.
+
 ## Demo accounts (created by `prisma/seed.ts`)
 
 | Role | Email | Password |
