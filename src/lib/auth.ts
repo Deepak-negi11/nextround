@@ -3,8 +3,21 @@ import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "./prisma";
 
-const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
 const COOKIE = "nextround_session";
+
+// Sessions are HMAC-signed with AUTH_SECRET. A missing or short secret would let anyone forge a
+// session (including an admin one), so refuse to sign or verify without a strong one.
+// Checked lazily so `next build` doesn't need the secret.
+let secretKey: Uint8Array | null = null;
+function secret(): Uint8Array {
+  if (secretKey) return secretKey;
+  const raw = process.env.AUTH_SECRET ?? "";
+  if (raw.length < 32) {
+    throw new Error("AUTH_SECRET must be set to a random string of at least 32 characters (openssl rand -base64 32).");
+  }
+  secretKey = new TextEncoder().encode(raw);
+  return secretKey;
+}
 
 export type SessionUser = {
   id: number;
@@ -17,10 +30,11 @@ export async function createSession(user: SessionUser) {
   const token = await new SignJWT({ ...user })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
-    .sign(secret);
+    .sign(secret());
   const store = await cookies();
   store.set(COOKIE, token, {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // HTTPS-only once deployed
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
@@ -37,7 +51,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const token = store.get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, secret());
     return {
       id: payload.id as number,
       email: payload.email as string,

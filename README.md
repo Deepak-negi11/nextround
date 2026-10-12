@@ -49,7 +49,35 @@ after a project is created.
 
 Data is not copied automatically: the steps above give you an empty schema plus the three demo accounts.
 
+## Deploying to Vercel
+
+1. **Replace the demo passwords** on the database you will deploy against (they are public in this README):
+   ```bash
+   bun run user:password admin@college.edu
+   bun run user:password interviewer@college.edu
+   bun run user:password student@college.edu
+   ```
+   The new password is typed at a hidden prompt.
+2. **Apply migrations** from your machine — Vercel does not run them: `npx prisma migrate deploy`.
+3. On vercel.com: **Add New → Project →** import this repo. Next.js and Bun are detected automatically;
+   `postinstall` runs `prisma generate` so the build always gets a fresh Prisma Client.
+4. **Environment variables** (Project → Settings → Environment Variables):
+   - `DATABASE_URL` — Supabase **transaction** pooler, port 6543:
+     `...pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1`
+     (each serverless instance keeps one connection; the pooler multiplexes them)
+   - `DIRECT_URL` — Supabase session pooler, port 5432 (only used by migrations, but Prisma expects it)
+   - `AUTH_SECRET` — a **new** value from `openssl rand -base64 32`. The app refuses to sign people in
+     without one of at least 32 characters.
+   - `STUDENT_EMAIL_DOMAINS` — e.g. `college.edu,gehu.ac.in`
+5. **Region:** `vercel.json` pins the server to `syd1` (Sydney) to sit next to the Supabase project.
+   If you move the database to another region, change it to match (Mumbai is `bom1`).
+6. Deploy. Then open `https://<your-app>.vercel.app/health` — it should report `"database": {"status": "ok"}`.
+
+In production the sign-in page hides the one-click demo logins, and the session cookie is HTTPS-only.
+
 ## Demo accounts (created by `prisma/seed.ts`)
+
+One-click buttons for these appear on `/login` in development only. Change their passwords before deploying (see above).
 
 | Role | Email | Password |
 |---|---|---|
