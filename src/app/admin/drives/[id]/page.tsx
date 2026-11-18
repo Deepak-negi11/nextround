@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { setDriveStatus } from "@/actions/admin";
-import { Badge, Card, PageHeader, STATUS_TONE, pretty } from "@/components/ui";
+import { Badge, Card, PageHeader, STATUS_TONE, applicationLabel, pretty } from "@/components/ui";
 import { SubmitButton } from "@/components/SubmitButton";
 import EligibilityForm from "./EligibilityForm";
 import RoundForm from "./RoundForm";
@@ -98,7 +98,16 @@ export default async function DriveManage({ params }: { params: Promise<{ id: st
         </Card>
       </div>
 
-      <Card title={`Applications (${drive.applications.length})`}>
+      <Card
+        title={`Applications (${drive.applications.length})`}
+        actions={
+          drive.applications.length > 0 ? (
+            <a href={`/admin/drives/${drive.id}/export`} className="text-xs font-medium text-brand-600 hover:underline">
+              Download applicants for company (CSV)
+            </a>
+          ) : undefined
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
@@ -127,7 +136,7 @@ export default async function DriveManage({ params }: { params: Promise<{ id: st
                       ))}
                     </div>
                   </td>
-                  <td className="py-2.5"><Badge tone={STATUS_TONE[a.applicationStatus]}>{pretty(a.applicationStatus)}</Badge></td>
+                  <td className="py-2.5"><Badge tone={STATUS_TONE[a.applicationStatus]}>{applicationLabel(a.applicationStatus, a.results.length)}</Badge></td>
                   <td className="py-2.5 text-right">
                     <OfferButton applicationId={a.id} status={a.applicationStatus} hasOffer={a.offers.length > 0} />
                   </td>

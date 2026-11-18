@@ -3,4 +3,4 @@ export { Card as CardRoot, CardHeader, CardTitle, CardDescription, CardContent, 
 export { badgeVariants } from "./badge";
 export { Input } from "./input";
 export { Label } from "./label";
-export { Badge, pretty, STATUS_TONE, StatCard, Card, inputCls, labelCls, overlineCls, PageHeader, cn } from "./shared";
+export { Badge, applicationLabel, pretty, STATUS_TONE, StatCard, Card, inputCls, labelCls, overlineCls, PageHeader, cn } from "./shared";

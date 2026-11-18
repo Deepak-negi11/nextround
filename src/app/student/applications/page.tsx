@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { bookSlot } from "@/actions/student";
-import { Badge, PageHeader, STATUS_TONE, pretty } from "@/components/ui";
+import { Badge, PageHeader, STATUS_TONE, applicationLabel, pretty } from "@/components/ui";
 
 const fmt = (d: Date | null) => (d ? new Date(d).toLocaleString() : "TBA");
 
@@ -41,7 +41,7 @@ export default async function ApplicationsPage() {
                 <h2 className="font-semibold">{app.drive.company.companyName} — {app.drive.jobRole}</h2>
                 <p className="text-xs text-slate-400">Applied {new Date(app.appliedAt).toLocaleDateString()}</p>
               </div>
-              <Badge tone={STATUS_TONE[app.applicationStatus]}>{pretty(app.applicationStatus)}</Badge>
+              <Badge tone={STATUS_TONE[app.applicationStatus]}>{applicationLabel(app.applicationStatus, app.results.length)}</Badge>
             </div>
 
             <ol className="mt-4 space-y-2">

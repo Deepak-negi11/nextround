@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { prisma, TX_OPTIONS } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { checkEligibility } from "@/lib/eligibility";
 import { notifyUsers } from "@/lib/notify";
@@ -109,15 +110,19 @@ export async function updateEligibility(_prev: ActionState, formData: FormData):
   if (isNaN(minimumCgpa) || minimumCgpa < 0 || minimumCgpa > 10 || isNaN(maximumBacklogs) || maximumBacklogs < 0 || branches.length === 0)
     return { error: "Invalid CGPA, backlogs or no branches selected." };
 
-  await prisma.eligibilityRule.upsert({
-    where: { driveId },
-    create: { driveId, minimumCgpa, maximumBacklogs },
-    update: { minimumCgpa, maximumBacklogs },
-  });
-  await prisma.driveBranch.deleteMany({ where: { driveId } });
-  await prisma.driveBranch.createMany({
-    data: branches.map((branchName) => ({ driveId, branchName })),
-  });
+  // One transaction: if inserting the new branch list fails, the old list is not left deleted
+  // (which would make the drive open to nobody).
+  await prisma.$transaction([
+    prisma.eligibilityRule.upsert({
+      where: { driveId },
+      create: { driveId, minimumCgpa, maximumBacklogs },
+      update: { minimumCgpa, maximumBacklogs },
+    }),
+    prisma.driveBranch.deleteMany({ where: { driveId } }),
+    prisma.driveBranch.createMany({
+      data: branches.map((branchName) => ({ driveId, branchName })),
+    }),
+  ]);
   revalidatePath(`/admin/drives/${driveId}`);
   return { ok: "Eligibility rules updated." };
 }
@@ -143,14 +148,19 @@ export async function createRound(_prev: ActionState, formData: FormData): Promi
     return v ? new Date(v) : null;
   };
 
+  const startAt = parse("startAt");
+  const endAt = parse("endAt");
+  if ((startAt && isNaN(startAt.getTime())) || (endAt && isNaN(endAt.getTime()))) return { error: "A date or time is invalid." };
+  if (startAt && endAt && endAt <= startAt) return { error: "The round must end after it starts." };
+
   await prisma.round.create({
     data: {
       driveId,
       roundNumber: (last?.roundNumber ?? 0) + 1,
       roundType: type,
       mode,
-      startAt: parse("startAt"),
-      endAt: parse("endAt"),
+      startAt,
+      endAt,
       resultDate: parse("resultDate"),
       meetingLink: mode === "ONLINE" ? String(formData.get("meetingLink") || "").trim() || null : null,
       instructions: mode === "ONLINE" ? String(formData.get("instructions") || "").trim() || null : null,
@@ -164,43 +174,123 @@ export async function createRound(_prev: ActionState, formData: FormData): Promi
   return { ok: `Round "${type}" added.` };
 }
 
-export async function announceRound(formData: FormData) {
+// The first round of a drive is the one that takes a shortlist from the applicants;
+// every later round takes the students who cleared the round before it.
+async function firstRoundId(driveId: number) {
+  const first = await prisma.round.findFirst({ where: { driveId }, orderBy: { roundNumber: "asc" }, select: { id: true } });
+  return first?.id ?? null;
+}
+
+// Step 1 of a round: the company sends back who it shortlisted, the admin ticks them here.
+// Ticked → shortlisted (IN_PROGRESS); unticked → not shortlisted (REJECTED). Both are notified.
+export async function shortlistForRound(_prev: ActionState, formData: FormData): Promise<ActionState> {
   await requireRole("ADMIN");
   const roundId = parseInt(String(formData.get("roundId")));
-  const round = await prisma.round.findUnique({
-    where: { id: roundId },
-    include: {
-      drive: {
-        include: {
-          company: true,
-          applications: { include: { student: { include: { user: true } } } },
-        },
-      },
-    },
+  const everyone = formData.get("all") === "1";
+  const picked = new Set(formData.getAll("applicationId").map((v) => Number(v)).filter(Number.isInteger));
+
+  const round = await prisma.round.findUnique({ where: { id: roundId }, include: { drive: { include: { company: true } } } });
+  if (!round) return { error: "Round not found." };
+  if (round.roundStatus !== "SCHEDULED") return { error: "The shortlist can only be changed before the round is announced." };
+  if ((await firstRoundId(round.driveId)) !== round.id)
+    return { error: "Only the first round takes a shortlist from applicants. Later rounds use the previous round's results." };
+
+  const candidates = await prisma.application.findMany({
+    where: { driveId: round.driveId, applicationStatus: { in: ["APPLIED", "IN_PROGRESS"] } },
+    select: { id: true, applicationStatus: true, student: { select: { userId: true } } },
   });
-  if (!round) return;
+  const chosen = everyone ? candidates : candidates.filter((c) => picked.has(c.id));
+  if (chosen.length === 0) return { error: "Tick at least one student, or use “Shortlist everyone”." };
+  const chosenIds = new Set(chosen.map((c) => c.id));
+  const rest = candidates.filter((c) => !chosenIds.has(c.id));
+  const newlyShortlisted = chosen.filter((c) => c.applicationStatus === "APPLIED");
+  const company = round.drive.company.companyName;
 
-  await prisma.round.update({ where: { id: roundId }, data: { roundStatus: "ANNOUNCED" } });
-  // Applications entering their first announced round are now in progress
-  await prisma.application.updateMany({
-    where: { driveId: round.driveId, applicationStatus: "APPLIED" },
-    data: { applicationStatus: "IN_PROGRESS" },
-  });
+  await prisma.$transaction(async (tx) => {
+    const stillOpen = { in: ["APPLIED", "IN_PROGRESS"] as ("APPLIED" | "IN_PROGRESS")[] };
+    await tx.application.updateMany({
+      where: { id: { in: [...chosenIds] }, applicationStatus: stillOpen },
+      data: { applicationStatus: "IN_PROGRESS" },
+    });
+    await tx.application.updateMany({
+      where: { id: { in: rest.map((r) => r.id) }, applicationStatus: stillOpen },
+      data: { applicationStatus: "REJECTED" },
+    });
+    await notifyUsers(
+      newlyShortlisted.map((c) => c.student.userId),
+      `Shortlisted for Round ${round.roundNumber} — ${company}`,
+      `You're on the shortlist for ${round.roundType}. Date and details will follow when the round is announced.`,
+      "/student/applications",
+      tx
+    );
+    await notifyUsers(
+      rest.map((c) => c.student.userId),
+      `Not shortlisted — ${company}`,
+      `${company} did not shortlist you for ${round.drive.jobRole}. Other drives are open — keep applying.`,
+      "/student/drives",
+      tx
+    );
+  }, TX_OPTIONS);
 
-  // Tell the students still in the running
-  await notifyUsers(
-    round.drive.applications
-      .filter((a) => a.applicationStatus !== "REJECTED" && a.applicationStatus !== "OFFER_ACCEPTED")
-      .map((a) => a.student.user.id),
-    `Round ${round.roundNumber} announced — ${round.roundType}`,
-    `${round.drive.company.companyName} · ${round.drive.jobRole}. ${
-      round.mode === "ONLINE" ? "Check the test link and instructions." : "Check the venue and reporting time."
-    }`,
-    "/student/applications"
-  );
-
+  revalidatePath(`/admin/rounds/${roundId}`);
   revalidatePath(`/admin/drives/${round.driveId}`);
-  revalidatePath("/student/applications");
+  revalidatePath("/student", "layout");
+  return { ok: `${chosen.length} shortlisted, ${rest.length} not shortlisted. Students have been notified.` };
+}
+
+// Step 2: tell the students who are in this round its date, mode and venue or link.
+export async function announceRound(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireRole("ADMIN");
+  const roundId = parseInt(String(formData.get("roundId")));
+  const round = await prisma.round.findUnique({ where: { id: roundId }, include: { drive: { include: { company: true } } } });
+  if (!round) return { error: "Round not found." };
+  if (round.roundStatus !== "SCHEDULED") return { error: "This round has already been announced." };
+
+  const unfinished = await prisma.round.findFirst({
+    where: { driveId: round.driveId, roundNumber: { lt: round.roundNumber }, roundStatus: { not: "COMPLETED" } },
+    select: { roundNumber: true },
+  });
+  if (unfinished) return { error: `Publish the results of Round ${unfinished.roundNumber} first.` };
+
+  const inRound = await prisma.application.findMany({
+    where: { driveId: round.driveId, applicationStatus: "IN_PROGRESS" },
+    select: { student: { select: { userId: true } } },
+  });
+  if (inRound.length === 0) {
+    const isFirst = (await firstRoundId(round.driveId)) === round.id;
+    return {
+      error: isFirst
+        ? `Shortlist students for Round ${round.roundNumber} first (use the list below).`
+        : "No students are in the running for this round.",
+    };
+  }
+
+  let announced = false;
+  await prisma.$transaction(async (tx) => {
+    // Conditional update = the guard and the change in one statement: a double click changes nothing.
+    const claimed = await tx.round.updateMany({
+      where: { id: roundId, roundStatus: "SCHEDULED" },
+      data: { roundStatus: "ANNOUNCED" },
+    });
+    if (claimed.count === 0) return;
+    announced = true;
+    await notifyUsers(
+      inRound.map((a) => a.student.userId),
+      `Round ${round.roundNumber} announced — ${round.roundType}`,
+      `${round.drive.company.companyName} · ${round.drive.jobRole}. ${
+        round.mode === "ONLINE" ? "Check the test link and instructions." : "Check the venue and reporting time."
+      }`,
+      "/student/applications",
+      tx
+    );
+  }, TX_OPTIONS);
+
+  revalidatePath(`/admin/rounds/${roundId}`);
+  revalidatePath(`/admin/drives/${round.driveId}`);
+  revalidatePath("/student", "layout");
+  return announced
+    ? { ok: `Round ${round.roundNumber} announced to ${inRound.length} student(s).` }
+    : { error: "This round has already been announced." };
 }
 
 export async function addSlot(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -209,6 +299,7 @@ export async function addSlot(_prev: ActionState, formData: FormData): Promise<A
   const startAt = new Date(String(formData.get("startAt")));
   const durationMin = parseInt(String(formData.get("durationMin"))) || 60;
   if (isNaN(startAt.getTime())) return { error: "Invalid slot start time." };
+  if (durationMin < 1 || durationMin > 480) return { error: "Slot length must be between 1 and 480 minutes." };
 
   await prisma.interviewSlot.create({
     data: {
@@ -237,71 +328,88 @@ export async function assignPanelist(_prev: ActionState, formData: FormData): Pr
 
 /* ---------------- Results & offers ---------------- */
 
-// Publish a round's recorded outcomes: moves students forward, ends rejected ones,
-// and marks the drive COMPLETE when the final round selects its students.
-export async function publishRoundResults(formData: FormData) {
-  await requireRole("ADMIN");
+// Step 3: the company sends back who cleared the round; the admin ticks them and publishes.
+// "Final round" marks the cleared students Selected (ready for offers) and completes the drive;
+// otherwise they stay in the running for the next round the company asks for.
+export async function publishRoundResults(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const admin = await requireRole("ADMIN");
   const roundId = parseInt(String(formData.get("roundId")));
-  const round = await prisma.round.findUnique({
-    where: { id: roundId },
-    include: {
-      drive: {
-        include: { company: true, rounds: { orderBy: { roundNumber: "asc" } } },
-      },
-    },
+  const finalChoice = String(formData.get("final") ?? "");
+  if (finalChoice !== "yes" && finalChoice !== "no") return { error: "Choose whether this was the final round." };
+  const isFinal = finalChoice === "yes";
+  const cleared = new Set(formData.getAll("cleared").map((v) => Number(v)).filter(Number.isInteger));
+
+  const round = await prisma.round.findUnique({ where: { id: roundId }, include: { drive: { include: { company: true } } } });
+  if (!round || round.roundStatus !== "ANNOUNCED") return { error: "Only an announced round can have its results published." };
+
+  const candidates = await prisma.application.findMany({
+    where: { driveId: round.driveId, applicationStatus: "IN_PROGRESS" },
+    select: { id: true, student: { select: { userId: true } } },
   });
-  if (!round || round.roundStatus !== "ANNOUNCED") return;
+  if (candidates.length === 0) return { error: "No students are in this round." };
+  const passed = candidates.filter((c) => cleared.has(c.id));
+  const failed = candidates.filter((c) => !cleared.has(c.id));
+  const passOutcome = isFinal ? "SELECTED" : "NEXT_ROUND";
+  const company = round.drive.company.companyName;
 
-  const isLastRound =
-    round.roundNumber === Math.max(...round.drive.rounds.map((r) => r.roundNumber));
+  let published = false;
+  await prisma.$transaction(async (tx) => {
+    // Claim the round first: published twice (a double click) → nothing below runs again.
+    const claimed = await tx.round.updateMany({
+      where: { id: roundId, roundStatus: "ANNOUNCED" },
+      data: { roundStatus: "COMPLETED" },
+    });
+    if (claimed.count === 0) return;
+    published = true;
 
-  const results = await prisma.roundResult.findMany({
-    where: { roundId },
-    include: { application: { include: { student: { include: { user: true } } } } },
-  });
+    // One result row per candidate for this round (keeps any score/remarks an interviewer entered).
+    await tx.roundResult.createMany({
+      data: passed.map((c) => ({ applicationId: c.id, roundId, outcome: passOutcome, recordedById: admin.id })),
+      skipDuplicates: true,
+    });
+    await tx.roundResult.createMany({
+      data: failed.map((c) => ({ applicationId: c.id, roundId, outcome: "REJECTED" as const, recordedById: admin.id })),
+      skipDuplicates: true,
+    });
+    await tx.roundResult.updateMany({
+      where: { roundId, applicationId: { in: passed.map((c) => c.id) } },
+      data: { outcome: passOutcome },
+    });
+    await tx.roundResult.updateMany({
+      where: { roundId, applicationId: { in: failed.map((c) => c.id) }, outcome: { not: "ABSENT" } },
+      data: { outcome: "REJECTED" },
+    });
 
-  const advanceUserIds: number[] = [];
-  const selectedUserIds: number[] = [];
-  const rejectedUserIds: number[] = [];
-
-  for (const result of results) {
-    let status: "SELECTED" | "REJECTED" | "IN_PROGRESS";
-    if (result.outcome === "REJECTED" || result.outcome === "ABSENT") {
-      status = "REJECTED";
-      rejectedUserIds.push(result.application.student.user.id);
-    } else if (result.outcome === "SELECTED" || result.outcome === "NEXT_ROUND") {
-      // Only the FINAL round marks an application SELECTED — earlier rounds just advance
-      status = isLastRound ? "SELECTED" : "IN_PROGRESS";
-      if (isLastRound) selectedUserIds.push(result.application.student.user.id);
-      else advanceUserIds.push(result.application.student.user.id);
-    } else {
-      continue; // PENDING
+    await tx.application.updateMany({
+      where: { id: { in: failed.map((c) => c.id) } },
+      data: { applicationStatus: "REJECTED" },
+    });
+    if (isFinal) {
+      await tx.application.updateMany({
+        where: { id: { in: passed.map((c) => c.id) } },
+        data: { applicationStatus: "SELECTED" },
+      });
+      await tx.drive.update({ where: { id: round.driveId }, data: { driveStatus: "COMPLETED" } });
     }
 
-    await prisma.application.update({
-      where: { id: result.applicationId },
-      data: { applicationStatus: status },
-    });
-  }
+    const passedIds = passed.map((c) => c.student.userId);
+    if (isFinal)
+      await notifyUsers(passedIds, `Selected! 🎉 — ${company}`, `You cleared the final ${round.roundType}. Your offer is on the way.`, "/student/offers", tx);
+    else
+      await notifyUsers(passedIds, `You cleared Round ${round.roundNumber} — ${company}`, `You're shortlisted for the next round. Its date will be announced soon.`, "/student/applications", tx);
+    await notifyUsers(failed.map((c) => c.student.userId), `Result published — ${company}`, `Not selected in Round ${round.roundNumber} (${round.roundType}). More drives are open — keep going.`, "/student/drives", tx);
+  }, TX_OPTIONS);
 
-  const company = round.drive.company.companyName;
-  if (advanceUserIds.length)
-    await notifyUsers(advanceUserIds, `You advance — ${company}`, `You cleared Round ${round.roundNumber} (${round.roundType}). Watch for the next round.`, "/student/applications");
-  if (selectedUserIds.length)
-    await notifyUsers(selectedUserIds, `Selected! 🎉 — ${company}`, `You cleared the final ${round.roundType}. Your offer is on the way.`, "/student/offers");
-  if (rejectedUserIds.length)
-    await notifyUsers(rejectedUserIds, `Result published — ${company}`, `Not selected in Round ${round.roundNumber} (${round.roundType}). More drives are open — keep going.`, "/student/drives");
-
-  await prisma.round.update({ where: { id: roundId }, data: { roundStatus: "COMPLETED" } });
-  if (isLastRound) {
-    await prisma.drive.update({
-      where: { id: round.driveId },
-      data: { driveStatus: "COMPLETED" },
-    });
-  }
+  revalidatePath(`/admin/rounds/${roundId}`);
   revalidatePath(`/admin/drives/${round.driveId}`);
-  revalidatePath("/student/applications");
   revalidatePath("/admin");
+  revalidatePath("/student", "layout");
+  if (!published) return { error: "These results were already published." };
+  return {
+    ok: isFinal
+      ? `Published. ${passed.length} selected (issue their offers on the drive page), ${failed.length} not selected.`
+      : `Published. ${passed.length} go to the next round, ${failed.length} not selected.`,
+  };
 }
 
 export async function issueOffer(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -320,22 +428,30 @@ export async function issueOffer(_prev: ActionState, formData: FormData): Promis
   if (application.drive.driveStatus !== "COMPLETED")
     return { error: "Publish the final round results before issuing offers." };
 
-  const exists = await prisma.offer.findUnique({ where: { applicationId } });
-  if (exists) return { error: "An offer already exists for this application." };
-
-  await prisma.offer.create({
-    data: { applicationId, package: application.drive.package },
-  });
-  await prisma.application.update({
-    where: { id: applicationId },
-    data: { applicationStatus: "OFFERED" },
-  });
-  await notifyUsers(
-    [application.student.user.id],
-    `Offer from ${application.drive.company.companyName}! 🎉`,
-    `${application.drive.jobRole} · ₹${Number(application.drive.package)} LPA — respond in your Offers page.`,
-    "/student/offers"
-  );
+  try {
+    await prisma.$transaction(async (tx) => {
+      // The UNIQUE constraint on Offer.applicationId is what really stops a second offer: two admins
+      // clicking at once can't both insert. (A "does one exist?" read first would be a race.)
+      await tx.offer.create({
+        data: { applicationId, package: application.drive.package },
+      });
+      await tx.application.update({
+        where: { id: applicationId },
+        data: { applicationStatus: "OFFERED" },
+      });
+      await notifyUsers(
+        [application.student.user.id],
+        `Offer from ${application.drive.company.companyName}! 🎉`,
+        `${application.drive.jobRole} · ₹${Number(application.drive.package)} LPA — respond in your Offers page.`,
+        "/student/offers",
+        tx
+      );
+    }, TX_OPTIONS);
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")
+      return { error: "An offer already exists for this application." };
+    throw e;
+  }
   revalidatePath(`/admin/drives/${application.driveId}`);
   revalidatePath("/student/offers");
   revalidatePath("/admin");

@@ -2,19 +2,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { announceRound, publishRoundResults } from "@/actions/admin";
 import { Badge, Card, STATUS_TONE, pretty } from "@/components/ui";
 import SlotForm from "./SlotForm";
 import PanelistForm from "./PanelistForm";
+import { AnnounceForm, ResultsForm, ShortlistForm, type Candidate } from "./RoundForms";
 
 export default async function RoundManage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await requireRole("ADMIN");
-  const [round, interviewers] = await Promise.all([
+  const roundId = parseInt(id);
+  const [round, interviewers, applicants] = await Promise.all([
     prisma.round.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: roundId },
       include: {
-        drive: { include: { company: true } },
+        drive: { include: { company: true, rounds: { select: { id: true, roundNumber: true }, orderBy: { roundNumber: "asc" } } } },
         slots: { orderBy: { startAt: "asc" }, include: { bookedByApplication: { include: { student: { include: { user: true } } } } } },
         panelists: { include: { interviewer: true } },
         results: { include: { application: { include: { student: { include: { user: true } } } } } },
@@ -24,8 +25,33 @@ export default async function RoundManage({ params }: { params: Promise<{ id: st
       where: { role: "INTERVIEWER" },
       orderBy: { name: "asc" },
     }),
+    // Students still in this drive: applied (not yet shortlisted) or in the running.
+    prisma.application.findMany({
+      where: { drive: { rounds: { some: { id: roundId } } }, applicationStatus: { in: ["APPLIED", "IN_PROGRESS"] } },
+      include: { student: { include: { user: true } } },
+      orderBy: { appliedAt: "asc" },
+    }),
   ]);
   if (!round) notFound();
+
+  const isFirstRound = round.drive.rounds[0]?.id === round.id;
+  const laterRoundExists = round.drive.rounds.some((r) => r.roundNumber > round.roundNumber);
+  const passedByInterviewer = new Set(
+    round.results.filter((r) => r.outcome === "SELECTED" || r.outcome === "NEXT_ROUND").map((r) => r.applicationId)
+  );
+  const toCandidate = (a: (typeof applicants)[number], checked: boolean): Candidate => ({
+    applicationId: a.id,
+    name: a.student.user.name,
+    rollNo: a.student.rollNo,
+    branch: a.student.branch,
+    cgpa: a.student.cgpa,
+    backlogs: a.student.activeBacklogs,
+    resumeLink: a.student.resumeLink,
+    checked,
+  });
+  const inRunning = applicants.filter((a) => a.applicationStatus === "IN_PROGRESS");
+  const clearedCount = round.results.filter((r) => r.outcome === "SELECTED" || r.outcome === "NEXT_ROUND").length;
+  const exportHref = `/admin/drives/${round.driveId}/export?only=active`;
 
   const isInterview = /interview/i.test(round.roundType);
 
@@ -46,22 +72,25 @@ export default async function RoundManage({ params }: { params: Promise<{ id: st
             </p>
           </div>
           <div className="flex gap-2">
-            {round.roundStatus === "SCHEDULED" && (
-              <form action={announceRound}>
-                <input type="hidden" name="roundId" value={round.id} />
-                <button className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500">📣 Announce to students</button>
-              </form>
-            )}
-            {round.roundStatus === "ANNOUNCED" && (
-              <form action={publishRoundResults}>
-                <input type="hidden" name="roundId" value={round.id} />
-                <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
-                  ✅ Publish results ({round.results.length} recorded)
-                </button>
-              </form>
-            )}
+            {round.roundStatus === "SCHEDULED" && <AnnounceForm roundId={round.id} />}
           </div>
         </div>
+        {/* Persistent status line: a form's own success message disappears once the round moves on. */}
+        {round.roundStatus === "ANNOUNCED" && (
+          <p role="status" className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            📣 Announced to {inRunning.length} student{inRunning.length === 1 ? "" : "s"}. When the company sends who cleared this round, enter it below.
+          </p>
+        )}
+        {round.roundStatus === "COMPLETED" && (
+          <p role="status" className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            ✅ Results published: {clearedCount} cleared, {round.results.length - clearedCount} not selected.{" "}
+            {round.drive.driveStatus === "COMPLETED" ? (
+              <Link href={`/admin/drives/${round.driveId}`} className="font-medium underline">Issue offers on the drive page →</Link>
+            ) : (
+              <Link href={`/admin/drives/${round.driveId}`} className="font-medium underline">Add or announce the next round →</Link>
+            )}
+          </p>
+        )}
         <div className="mt-3 space-y-1 text-xs text-slate-500">
           {round.mode === "ONLINE" ? (
             <>
@@ -73,6 +102,44 @@ export default async function RoundManage({ params }: { params: Promise<{ id: st
           )}
         </div>
       </header>
+
+      {/* The selection flow: company shortlists → admin enters it → announce → company sends who cleared → publish */}
+      {round.roundStatus === "SCHEDULED" && isFirstRound && (
+        <Card
+          title={`Shortlist for Round ${round.roundNumber} (${applicants.length} applicant${applicants.length === 1 ? "" : "s"})`}
+          actions={<a href={exportHref} className="text-xs font-medium text-brand-600 hover:underline">Download for company (CSV)</a>}
+        >
+          <ShortlistForm
+            roundId={round.id}
+            roundNumber={round.roundNumber}
+            candidates={applicants.map((a) => toCandidate(a, a.applicationStatus === "IN_PROGRESS"))}
+          />
+        </Card>
+      )}
+      {round.roundStatus === "SCHEDULED" && !isFirstRound && (
+        <Card title={`Students in this round (${inRunning.length})`}>
+          <p className="text-sm text-slate-600">
+            These students cleared the previous round. Announce this round to send them its date and details.
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {inRunning.map((a) => <li key={a.id}><Badge tone="blue">{a.student.user.name}</Badge></li>)}
+            {inRunning.length === 0 && <p className="text-sm text-slate-500">Nobody yet — publish the previous round&apos;s results first.</p>}
+          </ul>
+        </Card>
+      )}
+      {round.roundStatus === "ANNOUNCED" && (
+        <Card
+          title={`Enter results from the company (${inRunning.length} in this round)`}
+          actions={<a href={exportHref} className="text-xs font-medium text-brand-600 hover:underline">Download for company (CSV)</a>}
+        >
+          <ResultsForm
+            roundId={round.id}
+            roundNumber={round.roundNumber}
+            laterRoundExists={laterRoundExists}
+            candidates={inRunning.map((a) => toCandidate(a, passedByInterviewer.has(a.id)))}
+          />
+        </Card>
+      )}
 
       {isInterview && (
         <div className="grid gap-6 lg:grid-cols-2">

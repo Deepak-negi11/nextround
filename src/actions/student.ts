@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { prisma, TX_OPTIONS } from "@/lib/prisma";
 import { createSession, requireRole } from "@/lib/auth";
 import { checkEligibility } from "@/lib/eligibility";
 
@@ -64,10 +65,13 @@ export async function applyToDrive(formData: FormData) {
   });
   if (!eligible) return;
 
-  // Duplicate applications blocked by the DB unique constraint
-  await prisma.application
-    .create({ data: { studentId: student.id, driveId } })
-    .catch(() => null);
+  // Duplicate applications are blocked by the DB unique constraint (studentId, driveId):
+  // a double click just hits P2002, which is fine to ignore. Any other error is real — let it surface.
+  try {
+    await prisma.application.create({ data: { studentId: student.id, driveId } });
+  } catch (e) {
+    if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) throw e;
+  }
 
   revalidatePath("/student/drives");
   revalidatePath(`/student/drives/${driveId}`);
@@ -88,7 +92,7 @@ export async function bookSlot(formData: FormData) {
   if (!slot) return;
   // Slots exist only for announced rounds of live drives
   if (slot.round.roundStatus !== "ANNOUNCED") return;
-  if (slot.round.drive.driveStatus !== "PUBLISHED") return;
+  if (slot.round.drive.driveStatus !== "PUBLISHED" && slot.round.drive.driveStatus !== "CLOSED") return;
 
   const app = await prisma.application.findUnique({
     where: { studentId_driveId: { studentId: student.id, driveId: slot.round.driveId } },
@@ -126,16 +130,20 @@ export async function respondToOffer(formData: FormData) {
     include: { application: true },
   });
   if (!offer || offer.application.studentId !== student.id) return;
-  if (offer.offerStatus !== "ISSUED") return;
 
-  await prisma.offer.update({
-    where: { id: offerId },
-    data: { offerStatus: accept ? "ACCEPTED" : "DECLINED", respondedAt: new Date() },
-  });
-  await prisma.application.update({
-    where: { id: offer.applicationId },
-    data: { applicationStatus: accept ? "OFFER_ACCEPTED" : "OFFER_DECLINED" },
-  });
+  await prisma.$transaction(async (tx) => {
+    // Conditional update: only an ISSUED offer can be answered, so double-clicking "Accept" then
+    // "Decline" can't record both. The offer and its application change together or not at all.
+    const answered = await tx.offer.updateMany({
+      where: { id: offerId, offerStatus: "ISSUED" },
+      data: { offerStatus: accept ? "ACCEPTED" : "DECLINED", respondedAt: new Date() },
+    });
+    if (answered.count === 0) return;
+    await tx.application.update({
+      where: { id: offer.applicationId },
+      data: { applicationStatus: accept ? "OFFER_ACCEPTED" : "OFFER_DECLINED" },
+    });
+  }, TX_OPTIONS);
 
   revalidatePath("/student/offers");
   revalidatePath("/student");

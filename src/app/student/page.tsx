@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { Badge, Card, PageHeader, StatCard, STATUS_TONE, pretty } from "@/components/ui";
+import { Badge, Card, PageHeader, StatCard, STATUS_TONE, applicationLabel, pretty } from "@/components/ui";
 import { markNotificationsRead } from "@/actions/student";
 
 export default async function StudentDashboard() {
@@ -13,6 +13,7 @@ export default async function StudentDashboard() {
         include: {
           drive: { include: { company: true, rounds: { orderBy: { roundNumber: "asc" } } } },
           offers: true,
+          _count: { select: { results: true } },
         },
       },
     },
@@ -46,7 +47,7 @@ export default async function StudentDashboard() {
         subtitle={`${student.branch} · CGPA ${student.cgpa.toFixed(2)} · ${student.activeBacklogs} active backlog(s) · Class of ${student.graduationYear}`}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Active applications" value={active.length} />
         <StatCard label="Offers" value={offers.length} hint={offers.some((o) => o.offerStatus === "ISSUED") ? "Action needed — respond to your offer" : undefined} />
         <StatCard label="Total applied" value={student.applications.length} />
@@ -126,7 +127,7 @@ export default async function StudentDashboard() {
                   <td className="py-2.5 font-medium">{a.drive.company.companyName}</td>
                   <td className="py-2.5">{a.drive.jobRole}</td>
                   <td className="py-2.5">₹{Number(a.drive.package)} LPA</td>
-                  <td className="py-2.5"><Badge tone={STATUS_TONE[a.applicationStatus]}>{pretty(a.applicationStatus)}</Badge></td>
+                  <td className="py-2.5"><Badge tone={STATUS_TONE[a.applicationStatus]}>{applicationLabel(a.applicationStatus, a._count.results)}</Badge></td>
                 </tr>
               ))}
             </tbody>

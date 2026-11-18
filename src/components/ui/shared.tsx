@@ -32,6 +32,15 @@ export const STATUS_TONE: Record<string, string> = {
   ONLINE: "blue", OFFLINE: "amber",
 };
 
+// What people see for an application's status. IN_PROGRESS means "on the company's shortlist";
+// REJECTED before any round result means the student was not shortlisted at all.
+export function applicationLabel(status: string, roundResults: number) {
+  if (status === "IN_PROGRESS") return "Shortlisted";
+  if (status === "REJECTED" && roundResults === 0) return "Not shortlisted";
+  if (status === "REJECTED") return "Not selected";
+  return pretty(status);
+}
+
 export function pretty(s: string) {
   return s.replaceAll("_", " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 }
