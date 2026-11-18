@@ -3,6 +3,12 @@
 //
 //   bun run user:password admin@college.edu
 //
+// Or, when you can't connect to the database from this machine (e.g. a hosted database whose
+// password you don't have), print a hash and paste it in with SQL:
+//
+//   bun run user:hash
+//   UPDATE "User" SET "passwordHash" = '<printed hash>' WHERE email = 'admin@college.edu';
+//
 // The password is typed at a masked prompt (one "*" per character) — it never appears on screen
 // or in shell history.
 import bcrypt from "bcryptjs";
@@ -50,9 +56,9 @@ function askHidden(question: string): Promise<string> {
 }
 
 // Asks for a valid password, giving a few tries before giving up.
-async function askNewPassword(email: string, role: string): Promise<string | null> {
+async function askNewPassword(label: string): Promise<string | null> {
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const password = await askHidden(`New password for ${email} (${role}): `);
+    const password = await askHidden(`New password${label}: `);
     if (password.length < MIN_PASSWORD_LENGTH) {
       console.error(`  That was ${password.length} character(s); it needs at least ${MIN_PASSWORD_LENGTH}. Try again.`);
       continue;
@@ -71,6 +77,18 @@ async function askNewPassword(email: string, role: string): Promise<string | nul
 }
 
 async function main() {
+  // Hash-only mode: no database connection, just print the bcrypt hash of a new password.
+  if (process.argv[2] === "--hash") {
+    const password = await askNewPassword("");
+    if (!password) {
+      console.error("No password set — nothing printed.");
+      process.exit(1);
+    }
+    console.log("\nbcrypt hash (paste it into the SQL below, don't share it):\n");
+    console.log(await bcrypt.hash(password, 10));
+    return;
+  }
+
   const email = (process.argv[2] ?? "").trim().toLowerCase();
   if (!email) {
     console.error("Usage: bun run user:password <email>");
@@ -85,7 +103,7 @@ async function main() {
       process.exit(1);
     }
 
-    const password = await askNewPassword(email, user.role);
+    const password = await askNewPassword(` for ${email} (${user.role})`);
     if (!password) {
       console.error("No password set — nothing changed.");
       process.exit(1);

@@ -11,7 +11,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
-    "user:password": "tsx prisma/set-password.ts"
+    "user:password": "tsx prisma/set-password.ts",
+    "user:hash": "tsx prisma/set-password.ts --hash"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
