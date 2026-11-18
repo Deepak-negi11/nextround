@@ -1,0 +1,26 @@
+# Local development database. Start it with:  docker compose up -d
+# Then use DATABASE_URL / DIRECT_URL = postgresql://postgres:postgres@localhost:5433/nextround
+#
+# Port 5433 on the host, so it doesn't clash with a Homebrew Postgres on 5432.
+# Bound to 127.0.0.1 only: the dev password below is not reachable from the network.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nextround-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nextround
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - nextround-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nextround"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  nextround-db-data:

@@ -61,12 +61,12 @@ enum OfferStatus {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
+  id            Int             @id @default(autoincrement())
+  email         String          @unique
   passwordHash  String
   name          String
-  role          Role           @default(STUDENT)
-  createdAt     DateTime       @default(now())
+  role          Role            @default(STUDENT)
+  createdAt     DateTime        @default(now())
   student       Student?
   panelRounds   RoundPanelist[]
   resultsGiven  RoundResult[]
@@ -99,35 +99,34 @@ model Drive {
   rounds              Round[]
 
   @@index([driveStatus])
+  @@index([companyId]) // FK: "drives of this company", and the RESTRICT check when deleting a company
 }
 
 model EligibilityRule {
-  id              Int    @id @default(autoincrement())
-  driveId         Int    @unique
-  drive           Drive  @relation(fields: [driveId], references: [id], onDelete: Cascade)
-  minimumCgpa     Float  @default(0)
-  maximumBacklogs Int    @default(0)
+  id              Int   @id @default(autoincrement())
+  driveId         Int   @unique
+  drive           Drive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  minimumCgpa     Float @default(0)
+  maximumBacklogs Int   @default(0)
 }
 
 model DriveBranch {
   driveId    Int
   branchName String
-  drive      Drive @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  drive      Drive  @relation(fields: [driveId], references: [id], onDelete: Cascade)
 
   @@id([driveId, branchName])
 }
 
 model Student {
-  id             Int          @id @default(autoincrement())
-  userId         Int          @unique
-  user           User         @relation(fields: [userId], references: [id])
-  rollNo         String       @unique // University roll number
-  // University enrollment number. Optional only so students created before this field
-  // existed stay valid; sign-up and admin forms require it. Postgres allows many NULLs under UNIQUE.
-  enrollmentNo   String?      @unique
+  id             Int           @id @default(autoincrement())
+  userId         Int           @unique
+  user           User          @relation(fields: [userId], references: [id])
+  rollNo         String        @unique
+  enrollmentNo   String?       @unique
   branch         String
   cgpa           Float
-  activeBacklogs Int          @default(0)
+  activeBacklogs Int           @default(0)
   graduationYear Int
   resumeLink     String?
   applications   Application[]
@@ -154,7 +153,7 @@ model Round {
   driveId       Int
   drive         Drive           @relation(fields: [driveId], references: [id], onDelete: Cascade)
   roundNumber   Int
-  roundType     String // Aptitude Test, Online Coding Test, Group Discussion, Technical Interview, HR Interview, or custom
+  roundType     String
   mode          RoundMode       @default(ONLINE)
   startAt       DateTime?
   endAt         DateTime?
@@ -174,19 +173,20 @@ model Round {
 }
 
 model RoundPanelist {
-  id            Int    @id @default(autoincrement())
+  id            Int   @id @default(autoincrement())
   roundId       Int
-  round         Round  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  round         Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
   interviewerId Int
-  interviewer   User   @relation(fields: [interviewerId], references: [id])
+  interviewer   User  @relation(fields: [interviewerId], references: [id])
 
   @@unique([roundId, interviewerId])
+  @@index([interviewerId]) // FK: an interviewer's "my rounds" page looks rounds up by interviewer
 }
 
 model InterviewSlot {
-  id                    Int         @id @default(autoincrement())
+  id                    Int          @id @default(autoincrement())
   roundId               Int
-  round                 Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  round                 Round        @relation(fields: [roundId], references: [id], onDelete: Cascade)
   startAt               DateTime
   endAt                 DateTime
   venue                 String?
@@ -198,30 +198,31 @@ model InterviewSlot {
 }
 
 model RoundResult {
-  id           Int         @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   applicationId Int
-  application  Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  roundId      Int
-  round        Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
-  outcome      Outcome     @default(PENDING)
-  score        Float?
-  rank         Int?
-  remarks      String?
-  recordedById Int?
-  recordedBy   User?       @relation(fields: [recordedById], references: [id])
-  createdAt    DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  roundId       Int
+  round         Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  outcome       Outcome     @default(PENDING)
+  score         Float?
+  rank          Int?
+  remarks       String?
+  recordedById  Int?
+  recordedBy    User?       @relation(fields: [recordedById], references: [id])
+  createdAt     DateTime    @default(now())
 
   @@unique([applicationId, roundId])
+  @@index([roundId]) // FK: "all results of this round" — the unique index above starts with applicationId
 }
 
 model Offer {
-  id           Int         @id @default(autoincrement())
-  applicationId Int        @unique
-  application  Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  offerStatus  OfferStatus @default(ISSUED)
-  package      Decimal     @db.Decimal(10, 2)
-  issuedAt     DateTime    @default(now())
-  respondedAt  DateTime?
+  id            Int         @id @default(autoincrement())
+  applicationId Int         @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  offerStatus   OfferStatus @default(ISSUED)
+  package       Decimal     @db.Decimal(10, 2)
+  issuedAt      DateTime    @default(now())
+  respondedAt   DateTime?
 }
 
 // Senior success-story roadmaps (fixes the "students don't know how offers happen" loophole)
