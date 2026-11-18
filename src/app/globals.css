@@ -61,6 +61,45 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Motion: one easing family for the whole site. Animations move only transform/opacity. */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-fade-up: fade-up 0.7s var(--ease-out-quint) backwards;
+  --animate-fade-in: fade-in 0.5s var(--ease-out-quint) backwards;
+  --animate-page-in: page-in 0.45s var(--ease-out-quint) backwards;
+  --animate-slide-in-left: slide-in-left 0.4s var(--ease-spring) backwards;
+  --animate-shake: shake 0.42s var(--ease-out-quint);
+  --animate-spin-slow: spin 0.8s linear infinite;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+    to { transform: none; }
+  }
+  @keyframes shake {
+    0%, 100% { transform: none; }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(2px); }
+  }
+  @keyframes bar-grow {
+    from { transform: scaleY(0); }
+    to { transform: none; }
+  }
 }
 
 /* One slope angle for the whole site: both edges rise to the right by 3.5rem. */
@@ -71,6 +110,49 @@
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
+  }
+
+  /* .stagger — children rise in one after another on load (hero, stat cards).
+     Set --stagger-base on the parent to start the sequence later. */
+  .stagger > * {
+    animation: fade-up 0.7s var(--ease-out-quint) backwards;
+    animation-delay: calc(var(--stagger-base, 0ms) + var(--stagger-i, 0) * 80ms);
+  }
+  .stagger > :nth-child(2) { --stagger-i: 1; }
+  .stagger > :nth-child(3) { --stagger-i: 2; }
+  .stagger > :nth-child(4) { --stagger-i: 3; }
+  .stagger > :nth-child(5) { --stagger-i: 4; }
+  .stagger > :nth-child(6) { --stagger-i: 5; }
+  .stagger > :nth-child(n + 7) { --stagger-i: 6; }
+
+  /* .reveal — fade up as the element scrolls into view. Uses the browser's own scroll
+     timeline (no JavaScript); browsers without it simply show the content, never hide it. */
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: fade-up linear both;
+      animation-timing-function: var(--ease-out-quint);
+      animation-timeline: view();
+      animation-range: entry 0% entry 80%;
+    }
+    .reveal-bar {
+      transform-origin: bottom;
+      animation: bar-grow linear both;
+      animation-timing-function: var(--ease-out-quint);
+      animation-timeline: view();
+      animation-range: entry 40% cover 45%;
+    }
+  }
+}
+
+/* Respect "Reduce motion": everything appears instantly, nothing waits on a delay. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

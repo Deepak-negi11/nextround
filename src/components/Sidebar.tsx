@@ -132,8 +132,8 @@ export default function Sidebar({ user }: { user: SessionUser }) {
       {/* Mobile drawer */}
       {open && (
         <div id="app-mobile-drawer" className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden />
-          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] translate-x-0 flex-col border-r border-slate-200 bg-white shadow-xl">
+          <div className="absolute inset-0 animate-fade-in bg-slate-900/40 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden />
+          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] animate-slide-in-left flex-col border-r border-slate-200 bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <Brand />
               <button

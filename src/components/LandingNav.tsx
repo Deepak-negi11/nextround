@@ -44,7 +44,7 @@ export default function LandingNav() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+      className={`fixed inset-x-0 top-0 z-50 animate-fade-in transition-[background-color,border-color,box-shadow] duration-300 ${
         solid
           ? "border-b border-slate-200/80 bg-white/85 shadow-sm backdrop-blur-md"
           : "border-b border-transparent bg-transparent"

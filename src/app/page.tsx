@@ -63,7 +63,7 @@ export default async function Home() {
       <main>
       {/* Hero */}
       <section className="relative">
-        <div className="relative mx-auto flex max-w-6xl flex-col items-center px-4 pb-44 pt-36 text-center md:px-8 md:pb-52 md:pt-44">
+        <div className="stagger relative mx-auto flex max-w-6xl flex-col items-center px-4 pb-44 pt-36 text-center md:px-8 md:pb-52 md:pt-44">
           <p className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-1.5 text-xs font-medium tracking-wide text-brand-700 ring-1 ring-inset ring-brand-500/30">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand-500" aria-hidden />
             Campus placement portal
@@ -95,9 +95,9 @@ export default async function Home() {
 
       {/* Stats */}
       <section className="mx-auto -mt-24 max-w-6xl px-4 md:-mt-32 md:px-8">
-        <dl className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <dl className="stagger grid grid-cols-2 gap-3 [--stagger-base:320ms] md:grid-cols-4 md:gap-4">
           {STATS.map((s) => (
-            <div key={s.label} className="flex flex-col rounded-xl border border-slate-200/80 bg-white p-5 text-center shadow-lg shadow-slate-900/5">
+            <div key={s.label} className="flex flex-col rounded-xl border border-slate-200/80 bg-white p-5 text-center shadow-lg shadow-slate-900/5 transition-[translate,box-shadow] duration-500 ease-spring hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/5">
               <dt className="order-2 mt-1 text-xs text-slate-500">{s.label}</dt>
               <dd className="order-1 font-display text-3xl tracking-tight text-brand-600">{s.value}</dd>
             </div>
@@ -107,14 +107,14 @@ export default async function Home() {
 
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-24 md:px-8">
-        <p className={`${overlineCls} text-brand-600`}>Features</p>
-        <h2 className="mt-2 max-w-xl text-balance font-display text-4xl leading-[1.1] tracking-tight md:text-5xl">
+        <p className={`reveal ${overlineCls} text-brand-600`}>Features</p>
+        <h2 className="reveal mt-2 max-w-xl text-balance font-display text-4xl leading-[1.1] tracking-tight md:text-5xl">
           Built for how placements <em className="font-semibold">actually</em> work.
         </h2>
         {/* Bento grid */}
         <div className="mt-12 grid gap-4 md:grid-cols-6">
           {/* Eligibility — wide cell with a live-gate preview */}
-          <Card className="p-6 md:col-span-4">
+          <Card className="reveal p-6 md:col-span-4 transition-[translate,box-shadow] duration-500 ease-spring hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/5">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
               <ShieldCheck className="h-4 w-4" />
             </span>
@@ -135,7 +135,7 @@ export default async function Home() {
           </Card>
 
           {/* Rounds — flow list */}
-          <Card className="p-6 md:col-span-2">
+          <Card className="reveal p-6 md:col-span-2 transition-[translate,box-shadow] duration-500 ease-spring hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/5">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
               <ListChecks className="h-4 w-4" />
             </span>
@@ -152,7 +152,7 @@ export default async function Home() {
           </Card>
 
           {/* Logistics — slots preview */}
-          <Card className="p-6 md:col-span-2">
+          <Card className="reveal p-6 md:col-span-2 transition-[translate,box-shadow] duration-500 ease-spring hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/5">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
               <CalendarDays className="h-4 w-4" />
             </span>
@@ -171,7 +171,7 @@ export default async function Home() {
           </Card>
 
           {/* Outcomes */}
-          <Card className="p-6 md:col-span-2">
+          <Card className="reveal p-6 md:col-span-2 transition-[translate,box-shadow] duration-500 ease-spring hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/5">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
               <ClipboardCheck className="h-4 w-4" />
             </span>
@@ -185,7 +185,7 @@ export default async function Home() {
           </Card>
 
           {/* Analytics — mini bar chart */}
-          <Card className="p-6 md:col-span-2">
+          <Card className="reveal p-6 md:col-span-2 transition-[translate,box-shadow] duration-500 ease-spring hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/5">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
               <BarChart3 className="h-4 w-4" />
             </span>
@@ -193,13 +193,13 @@ export default async function Home() {
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Reports write themselves.</p>
             <div className="mt-6 flex h-20 items-end gap-2" aria-hidden>
               {[40, 70, 55, 90, 65].map((height, i) => (
-                <div key={i} className={`w-full rounded-t-sm ${i === 3 ? "bg-brand-700" : "bg-brand-400"}`} style={{ height: `${height}%` }} />
+                <div key={i} className={`reveal-bar w-full rounded-t-sm ${i === 3 ? "bg-brand-700" : "bg-brand-400"}`} style={{ height: `${height}%` }} />
               ))}
             </div>
           </Card>
 
           {/* Roadmaps — full-width timeline */}
-          <Card className="p-6 md:col-span-6">
+          <Card className="reveal p-6 md:col-span-6 transition-[translate,box-shadow] duration-500 ease-spring hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/5">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="max-w-sm">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground">
@@ -227,13 +227,13 @@ export default async function Home() {
       {/* How it works */}
       <section id="how" className="relative scroll-mt-24 py-24">
         <div className="mx-auto max-w-6xl px-4 md:px-8">
-          <p className={`${overlineCls} text-brand-600`}>How it works</p>
-          <h2 className="mt-2 max-w-xl text-balance font-display text-3xl font-medium leading-[1.15] tracking-[-0.01em] md:text-[40px]">
+          <p className={`reveal ${overlineCls} text-brand-600`}>How it works</p>
+          <h2 className="reveal mt-2 max-w-xl text-balance font-display text-3xl font-medium leading-[1.15] tracking-[-0.01em] md:text-[40px]">
             Drive to offer, in <em className="font-semibold">three moves.</em>
           </h2>
           <ol className="mt-12 grid gap-4 md:grid-cols-3 md:gap-6 lg:gap-8">
             {STEPS.map((s) => (
-              <li key={s.n} className="relative rounded-xl border border-brand-100 bg-white p-6 shadow-xs">
+              <li key={s.n} className="reveal relative rounded-xl border border-brand-100 bg-white p-6 shadow-xs transition-[translate,box-shadow] duration-500 ease-spring hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/5">
                 <span className="font-display text-4xl font-medium text-slate-300">{s.n}</span>
                 <h3 className="mt-3 font-display text-2xl font-medium leading-[1.25] tracking-tight text-slate-900">{s.title}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{s.desc}</p>
@@ -245,13 +245,13 @@ export default async function Home() {
 
       {/* Roles */}
       <section id="roles" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-24 md:px-8">
-        <p className={`${overlineCls} text-brand-600`}>For teams</p>
-        <h2 className="mt-2 max-w-xl text-balance font-display text-4xl leading-[1.1] tracking-tight md:text-5xl">
+        <p className={`reveal ${overlineCls} text-brand-600`}>For teams</p>
+        <h2 className="reveal mt-2 max-w-xl text-balance font-display text-4xl leading-[1.1] tracking-tight md:text-5xl">
           One portal, <em className="font-semibold">every seat</em> at the table.
         </h2>
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           {ROLES.map((r) => (
-            <article key={r.role} className="overflow-hidden rounded-xl border border-slate-200/80 shadow-xs">
+            <article key={r.role} className="reveal overflow-hidden rounded-xl border border-slate-200/80 shadow-xs transition-[translate,box-shadow] duration-500 ease-spring hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-900/5">
               <div className={`h-2 bg-gradient-to-r ${r.accent}`} aria-hidden />
               <div className="bg-white p-6">
                 <h3 className="font-display text-2xl font-medium tracking-tight">{r.role}</h3>
@@ -264,7 +264,7 @@ export default async function Home() {
 
       {/* CTA */}
       <section className="relative overflow-hidden py-24">
-        <div className="relative mx-auto flex max-w-3xl flex-col items-center px-4 text-center md:px-8">
+        <div className="reveal relative mx-auto flex max-w-3xl flex-col items-center px-4 text-center md:px-8">
           <h2 className="text-balance font-display text-3xl font-medium leading-[1.15] tracking-[-0.01em] md:text-[40px]">
             Make the <em className="font-semibold">next round</em> yours.
           </h2>
@@ -274,7 +274,7 @@ export default async function Home() {
           </p>
           <Link
             href="/login"
-            className="mt-8 inline-flex items-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:-translate-y-0.5 hover:bg-brand-700"
+            className="mt-8 inline-flex items-center rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/30 transition duration-300 ease-spring hover:-translate-y-0.5 hover:bg-brand-700 active:scale-[0.97]"
           >
             Sign in
           </Link>

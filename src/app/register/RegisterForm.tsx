@@ -28,9 +28,11 @@ export default function RegisterForm({
 
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-12">
-      <Logo />
+      <div className="animate-fade-in">
+        <Logo />
+      </div>
 
-      <div className="mt-8 w-full max-w-[560px] rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.12)] sm:p-9">
+      <div className="mt-8 w-full animate-fade-up [animation-delay:80ms] max-w-[560px] rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.12)] sm:p-9">
         <h1 className="font-display text-[28px] font-semibold leading-tight tracking-[-0.02em] text-slate-900">Create your student account</h1>
         <p className="mt-1.5 text-sm text-slate-500">
           Your academics decide which drives you can apply to, so enter them exactly as on your marksheet.
@@ -153,7 +155,7 @@ export default function RegisterForm({
           </section>
 
           {state.error && (
-            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p role="alert" className="animate-shake rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {state.error}
             </p>
           )}
@@ -161,7 +163,7 @@ export default function RegisterForm({
         </form>
       </div>
 
-      <p className="mt-6 text-sm text-slate-500">
+      <p className="mt-6 animate-fade-in text-sm text-slate-500 [animation-delay:240ms]">
         Already have an account?{" "}
         <Link href="/login" className="font-medium text-brand-600 hover:text-brand-700 hover:underline">
           Sign in

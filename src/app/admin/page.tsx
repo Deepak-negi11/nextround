@@ -45,7 +45,7 @@ export default async function AdminDashboard() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Registered students" value={students} />
         <StatCard label="Active companies" value={companies} />
         <StatCard label="Applications" value={applications.length} hint={`${selectionRate}% reached selection`} />
